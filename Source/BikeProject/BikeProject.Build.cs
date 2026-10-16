@@ -9,9 +9,12 @@ public class BikeProject : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ApexDestruction", "Networking", "Sockets", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ApexDestruction", "Networking", "Sockets", "UMG", "SimpleBLE" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
+
+		CppStandard = CppStandardVersion.Cpp17;
+
 
 		// Uncomment if you are using Slate UI
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

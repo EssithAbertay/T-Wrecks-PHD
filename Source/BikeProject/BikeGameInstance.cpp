@@ -6,6 +6,8 @@
 #include "HAL/FileManager.h" 
 #include "Engine/Engine.h" 
 
+
+#include <simpleble/Public/simpleble/SimpleBLE.h>
 void UBikeGameInstance::Init()
 {
 	Circumference = 2100;
@@ -35,6 +37,12 @@ void UBikeGameInstance::Init()
 	{
 		TutorialState = true;
 	}
+
+	if (!SimpleBLE::Adapter::bluetooth_enabled()) {
+		UE_LOG(LogTemp, Warning, TEXT("Bluetooth disabled"));
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Bluetooth enabled"));
 }
 
 void UBikeGameInstance::Shutdown()
