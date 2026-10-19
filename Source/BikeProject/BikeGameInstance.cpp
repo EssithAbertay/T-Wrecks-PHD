@@ -8,6 +8,7 @@
 
 
 #include <simpleble/Public/simpleble/SimpleBLE.h>
+
 void UBikeGameInstance::Init()
 {
 	Circumference = 2100;
@@ -43,6 +44,24 @@ void UBikeGameInstance::Init()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Bluetooth enabled"));
+
+	auto adapters = SimpleBLE::Adapter::get_adapters();
+	if (adapters.empty()) {
+		UE_LOG(LogTemp, Warning, TEXT("No Bluetooth adapters found."));
+	}
+	//auto adapter = adapters[0];
+	//UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
+
+	//std::vector<SimpleBLE::Peripheral> peripherals;
+	//adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
+	//adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
+	//adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
+	//	UE_LOG(LogTemp, Warning, TEXT("Found device: ADD DEVICE INFO"));
+	//	if (peripheral.is_connectable()) {
+	//		peripherals.push_back(peripheral);
+	//	}
+	//	});
+
 }
 
 void UBikeGameInstance::Shutdown()
