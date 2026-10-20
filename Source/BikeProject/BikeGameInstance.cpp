@@ -8,6 +8,7 @@
 
 
 #include <simpleble/Public/simpleble/SimpleBLE.h>
+#include <string>
 
 void UBikeGameInstance::Init()
 {
@@ -43,25 +44,35 @@ void UBikeGameInstance::Init()
 		UE_LOG(LogTemp, Warning, TEXT("Bluetooth disabled"));
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Bluetooth enabled"));
+	UE_LOG(LogTemp, Warning, TEXT("Bluetooth enabled, REALLY LONG BIT OF TEXT ON THE END TO MAKE IT EASIER TO SEE IN THE LOG"));
 
 	auto adapters = SimpleBLE::Adapter::get_adapters();
 	if (adapters.empty()) {
 		UE_LOG(LogTemp, Warning, TEXT("No Bluetooth adapters found."));
 	}
-	//auto adapter = adapters[0];
-	//UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
 
-	//std::vector<SimpleBLE::Peripheral> peripherals;
-	//adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
-	//adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
-	//adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
-	//	UE_LOG(LogTemp, Warning, TEXT("Found device: ADD DEVICE INFO"));
-	//	if (peripheral.is_connectable()) {
-	//		peripherals.push_back(peripheral);
-	//	}
-	//	});
+	auto adapter = adapters[0];
+	UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
 
+	std::vector<SimpleBLE::Peripheral> peripherals;
+	adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
+	adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
+	adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
+
+		std::string id = peripheral.identifier();
+		std::string address = peripheral.address();
+
+		FString DeviceId = UTF8_TO_TCHAR(id.c_str());
+		FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
+
+		FString Msg = TEXT("Found device: ") + DeviceId + TEXT(" | Address: ") + DeviceAddress;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
+		if (peripheral.is_connectable()) {
+			peripherals.push_back(peripheral);
+		}
+		});
+	//adapter.scan_for(5000); 
 }
 
 void UBikeGameInstance::Shutdown()
