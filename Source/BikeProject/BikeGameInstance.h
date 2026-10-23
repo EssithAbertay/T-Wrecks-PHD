@@ -6,6 +6,10 @@
 #include "BikePhysicalInput.h"
 #include "BikeMobileInput.h"
 #include "BikeProjectStatsStruct.h"
+
+// Includes for bluetooth input
+#include "BikeBluetoothInput.h"
+
 #include "BikeGameInstance.generated.h"
 
 
@@ -104,6 +108,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString GetDeviceAddress() const;
 
+
+
+	// Functions for starting and ending the bluetooth thread and related, will be called from within the SMconnections blueprint, I know I hate it too
+	UFUNCTION(BlueprintCallable)
+	void StartBluetoothTask();
+	UFUNCTION(BlueprintCallable)
+	void StopBluetoothTask();
+
+	void AddToDeviceArray(FString NewDevice);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetBluetoothDeviceArray() const;
 private:
 	TArray<unsigned short> EventTimes;
 	TArray<unsigned short> RevolutionCounts;
@@ -133,4 +149,12 @@ private:
 	bool MobileEnabled;
 	UPROPERTY(BlueprintSetter = SetMobileState, BlueprintGetter = GetMobileState)
 	int MobileState;
+
+
+	// Bluetooth task variables and things :p
+
+	BikeBluetoothInput* BluetoothTask;
+
+	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
+	TArray<FString> BluetoothDeviceArr;
 };
