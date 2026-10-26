@@ -9,14 +9,13 @@
 
 #include "BikeGameInstance.h"
 
-#include <simpleble/Public/simpleble/SimpleBLE.h>
-
 #include <string>
 
 BikeBluetoothInput::BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef)
 {
     GameInstanceRef = BikeInstanceRef;
     FirstRun = true;
+	bRunThread = true;
     UE_LOG(LogTemp, Warning, TEXT("Constructor of bluetooth task thread"));
     RunnableThread = FRunnableThread::Create(this, TEXT("Bluetooth Task"), 0, TPri_BelowNormal);
 }
@@ -24,6 +23,23 @@ BikeBluetoothInput::BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef)
 BikeBluetoothInput::~BikeBluetoothInput()
 {
     UE_LOG(LogTemp, Warning, TEXT("Deconstructor of bluetooth task thread"));
+
+	//if (peripheral.is_connected())
+	//{
+	//	peripheral.disconnect();
+	//	UE_LOG(LogTemp, Warning, TEXT("BLE device disconnected"));
+	//}
+
+	Stop();
+
+
+	if (RunnableThread != nullptr)
+	{
+		RunnableThread->WaitForCompletion();
+
+		delete RunnableThread;
+		RunnableThread = nullptr;
+	}
 }
 
 bool BikeBluetoothInput::Init()
@@ -58,7 +74,7 @@ uint32 BikeBluetoothInput::Run()
 		auto adapter = adapters[0];
 		UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
 
-		std::vector<SimpleBLE::Peripheral> peripherals;
+
 		adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
 		adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
 		adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
@@ -81,21 +97,84 @@ uint32 BikeBluetoothInput::Run()
 			});
 
 
-		adapter.scan_for(15000);
+		adapter.scan_for(5000);
 
-		bool connected = false;
-
-		while (connected)
-		{
-
-			// Sleep so we don't use all resources waiting for a connection
-			FPlatformProcess::Sleep(0.03F);
-		}
     }
+
+
+	UE_LOG(LogTemp, Warning, TEXT("Waiting to connect to peripheral"));
+
+
+	int indexToConnect = -1;
+	//after scanning for devices, connect to one
+	while (!connected && bRunThread)
+	{
+		indexToConnect = GameInstanceRef->GetDesiredConnection();
+
+		// -1 is default value, when you get an actual number attempt to connect to it
+		if (indexToConnect != -1)
+		{
+			if (!(indexToConnect >= peripherals.size()))
+			{
+				ConnectedPeripheral = peripherals[indexToConnect];
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("Connecting to peripheral"));
+			ConnectedPeripheral.connect();
+
+			connected = true;
+			UE_LOG(LogTemp, Warning, TEXT("Connected!"));
+
+			std::vector<std::pair<SimpleBLE::BluetoothUUID, SimpleBLE::BluetoothUUID>> readable_characteristics;
+			for (SimpleBLE::Service& service : ConnectedPeripheral.services()) {
+				for ( auto& characteristic : service.characteristics()) {
+					if (characteristic.can_read()) {
+						readable_characteristics.emplace_back(service.uuid(), characteristic.uuid());
+					}
+				}
+			}
+			if (readable_characteristics.empty()) {
+				UE_LOG(LogTemp, Warning, TEXT("The peripheral has no readable characteristics."))
+					ConnectedPeripheral.disconnect();
+				return false;
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Readable characteristics:"));
+
+			for (std::size_t i = 0; i < readable_characteristics.size(); i++)
+			{
+				FString CharacteristicUUID = UTF8_TO_TCHAR(readable_characteristics[i].first.c_str());
+				FString CharacteristicValue = UTF8_TO_TCHAR(readable_characteristics[i].second.c_str());
+
+				UE_LOG(
+					LogTemp,
+					Warning,
+					TEXT("[%d] %s %s"),
+					static_cast<int32>(i),
+					*CharacteristicUUID,
+					*CharacteristicValue
+				);
+			}
+
+		}
+	}
 
     while (bRunThread)
     {
-        // do something
+		std::string ServiceUUID ="00001818-0000-1000-8000-00805f9b34fb";
+
+		std::string CharacteristicUUID ="00002a63-0000-1000-8000-00805f9b34fb";
+
+		SimpleBLE::ByteArray data = ConnectedPeripheral.read(ServiceUUID, CharacteristicUUID);
+		FString HexData;
+
+		for (uint8 Byte : data)
+		{
+			HexData += FString::Printf(TEXT("%02X"), Byte);
+		}
+
+		int Value = FParse::HexNumber(*HexData);
+		UE_LOG(LogTemp, Warning, TEXT("Value: %s"),*FString::SanitizeFloat(static_cast<float>(Value)));
+		FPlatformProcess::Sleep(0.03F);
     }
 
     return 0;
@@ -104,6 +183,13 @@ uint32 BikeBluetoothInput::Run()
 void BikeBluetoothInput::Stop()
 {
    UE_LOG(LogTemp, Warning, TEXT("STOP of bluetooth task thread"));
+
+	if (ConnectedPeripheral.initialized() && ConnectedPeripheral.is_connected())
+	{
+		ConnectedPeripheral.disconnect();
+		UE_LOG(LogTemp, Warning, TEXT("BLE device disconnected"));
+	}
+   
 
    bRunThread = false;
 }

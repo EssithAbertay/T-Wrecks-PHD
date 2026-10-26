@@ -120,6 +120,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	TArray<FString> GetBluetoothDeviceArray() const;
+	UFUNCTION(BlueprintCallable)
+	void SetDesiredConnection(int connectionValue);
+	UFUNCTION()
+	int GetDesiredConnection() const;
+
+
 private:
 	TArray<unsigned short> EventTimes;
 	TArray<unsigned short> RevolutionCounts;
@@ -157,4 +163,7 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
 	TArray<FString> BluetoothDeviceArr;
+
+	UPROPERTY(BlueprintSetter = SetDesiredConnection)
+	int desiredConnection = -1;
 };

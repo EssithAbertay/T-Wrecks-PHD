@@ -45,6 +45,8 @@ void UBikeGameInstance::Shutdown()
 {
 	StopPhysicalTask();
 	StopMobileTask();
+
+	StopBluetoothTask();
 }
 
 void UBikeGameInstance::SetPhysicalSpeed(float NewSpeed)
@@ -300,4 +302,14 @@ void UBikeGameInstance::AddToDeviceArray(FString NewDevice)
 TArray<FString> UBikeGameInstance::GetBluetoothDeviceArray() const
 {
 	return BluetoothDeviceArr;
+}
+
+void UBikeGameInstance::SetDesiredConnection(int connectionValue)
+{
+	desiredConnection = connectionValue;
+}
+
+int UBikeGameInstance::GetDesiredConnection() const
+{
+	return desiredConnection;
 }
