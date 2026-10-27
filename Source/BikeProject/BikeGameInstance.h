@@ -125,6 +125,11 @@ public:
 	UFUNCTION()
 	int GetDesiredConnection() const;
 
+	UFUNCTION(BlueprintCallable)
+	float GetBluetoothPower() const;
+	UFUNCTION(BlueprintCallable)
+	void SetBluetoothPower(float BTPower);
+
 
 private:
 	TArray<unsigned short> EventTimes;
@@ -166,4 +171,7 @@ private:
 
 	UPROPERTY(BlueprintSetter = SetDesiredConnection)
 	int desiredConnection = -1;
+
+	UPROPERTY(BlueprintGetter = GetBluetoothPower, BlueprintSetter = SetBluetoothPower)
+	float BluetoothPower;
 };

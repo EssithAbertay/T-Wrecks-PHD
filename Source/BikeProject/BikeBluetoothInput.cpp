@@ -18,6 +18,8 @@ BikeBluetoothInput::BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef)
 	bRunThread = true;
     UE_LOG(LogTemp, Warning, TEXT("Constructor of bluetooth task thread"));
     RunnableThread = FRunnableThread::Create(this, TEXT("Bluetooth Task"), 0, TPri_BelowNormal);
+
+	GameInstanceRef->SetMaxPower(160); // TEMP, JUST FOR TESTING!
 }
 
 BikeBluetoothInput::~BikeBluetoothInput()
@@ -40,6 +42,25 @@ BikeBluetoothInput::~BikeBluetoothInput()
 		delete RunnableThread;
 		RunnableThread = nullptr;
 	}
+}
+
+void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
+{
+	FString HexData;
+
+	for (uint8 Byte : payload)
+	{
+		HexData += FString::Printf(TEXT("%02X"), Byte);
+	}
+	
+	uint16 Flags = uint16(payload[0]) | (uint16(payload[1]) << 8);
+	FString flagData = FString::Printf(TEXT("%04X"), Flags);
+
+	uint16 Power = uint16(payload[2]) |(uint16(payload[3]) << 8);
+
+	UE_LOG(LogTemp, Warning, TEXT("%u watts"), Power);
+
+	GameInstanceRef->SetBluetoothPower(Power);
 }
 
 bool BikeBluetoothInput::Init()
@@ -97,7 +118,7 @@ uint32 BikeBluetoothInput::Run()
 			});
 
 
-		adapter.scan_for(5000);
+		adapter.scan_for(15000);
 
     }
 
@@ -125,57 +146,67 @@ uint32 BikeBluetoothInput::Run()
 			connected = true;
 			UE_LOG(LogTemp, Warning, TEXT("Connected!"));
 
-			std::vector<std::pair<SimpleBLE::BluetoothUUID, SimpleBLE::BluetoothUUID>> readable_characteristics;
-			for (SimpleBLE::Service& service : ConnectedPeripheral.services()) {
-				for ( auto& characteristic : service.characteristics()) {
-					if (characteristic.can_read()) {
-						readable_characteristics.emplace_back(service.uuid(), characteristic.uuid());
+			UE_LOG(LogTemp, Warning, TEXT("Discovered characteristics:"));
+
+			bool bFoundReadableCharacteristic = false;
+
+			for (SimpleBLE::Service& service : ConnectedPeripheral.services())
+			{
+				for (auto& characteristic : service.characteristics())
+				{
+					const bool bCanRead = characteristic.can_read();
+					const bool bCanNotify = characteristic.can_notify();
+					const bool bCanIndicate = characteristic.can_indicate();
+
+					if (bCanRead)
+					{
+						bFoundReadableCharacteristic = true;
 					}
+
+					const FString ServiceUUID =
+						UTF8_TO_TCHAR(service.uuid().c_str());
+
+					const FString CharacteristicUUID =
+						UTF8_TO_TCHAR(characteristic.uuid().c_str());
+
+					UE_LOG(
+						LogTemp,
+						Warning,
+						TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s"),
+						*ServiceUUID,
+						*CharacteristicUUID,
+						bCanRead ? TEXT("Yes") : TEXT("No"),
+						bCanNotify ? TEXT("Yes") : TEXT("No"),
+						bCanIndicate ? TEXT("Yes") : TEXT("No")
+
+					);
 				}
 			}
-			if (readable_characteristics.empty()) {
-				UE_LOG(LogTemp, Warning, TEXT("The peripheral has no readable characteristics."))
-					ConnectedPeripheral.disconnect();
-				return false;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("Readable characteristics:"));
 
-			for (std::size_t i = 0; i < readable_characteristics.size(); i++)
+			if (!bFoundReadableCharacteristic)
 			{
-				FString CharacteristicUUID = UTF8_TO_TCHAR(readable_characteristics[i].first.c_str());
-				FString CharacteristicValue = UTF8_TO_TCHAR(readable_characteristics[i].second.c_str());
-
 				UE_LOG(
 					LogTemp,
 					Warning,
-					TEXT("[%d] %s %s"),
-					static_cast<int32>(i),
-					*CharacteristicUUID,
-					*CharacteristicValue
+					TEXT("The peripheral has no readable characteristics.")
 				);
+
+				ConnectedPeripheral.disconnect();
+				return false;
 			}
 
+			std::string ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
+			std::string CharacteristicUUID ="00002a63-0000-1000-8000-00805f9b34fb";
+			ConnectedPeripheral.notify(ServiceUUID, CharacteristicUUID, [this](SimpleBLE::ByteArray payload){ReceivePowerNotification(payload);});
 		}
+
+		FPlatformProcess::Sleep(0.03f);
 	}
 
-    while (bRunThread)
-    {
-		std::string ServiceUUID ="00001818-0000-1000-8000-00805f9b34fb";
-
-		std::string CharacteristicUUID ="00002a63-0000-1000-8000-00805f9b34fb";
-
-		SimpleBLE::ByteArray data = ConnectedPeripheral.read(ServiceUUID, CharacteristicUUID);
-		FString HexData;
-
-		for (uint8 Byte : data)
-		{
-			HexData += FString::Printf(TEXT("%02X"), Byte);
-		}
-
-		int Value = FParse::HexNumber(*HexData);
-		UE_LOG(LogTemp, Warning, TEXT("Value: %s"),*FString::SanitizeFloat(static_cast<float>(Value)));
+	while (bRunThread)
+	{
 		FPlatformProcess::Sleep(0.03F);
-    }
+	}
 
     return 0;
 }

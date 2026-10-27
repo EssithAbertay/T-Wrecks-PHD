@@ -60,7 +60,7 @@ void ABikeProjectPlayerController::Tick(float DeltaTime)
 
 		float TempPower;
 
-		PowerLevelBP = GameInstanceRef->GetSpeed();
+		PowerLevelBP = GameInstanceRef->GetBluetoothPower(); // CHANGED FROM GET SPEED! MOVE BACK LATER
 
 		if (PowerLevelKB > PowerLevelBP)
 		{

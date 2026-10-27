@@ -313,3 +313,13 @@ int UBikeGameInstance::GetDesiredConnection() const
 {
 	return desiredConnection;
 }
+
+float UBikeGameInstance::GetBluetoothPower() const
+{
+	return BluetoothPower;
+}
+
+void UBikeGameInstance::SetBluetoothPower(float BTPower)
+{
+	BluetoothPower = BTPower;
+}

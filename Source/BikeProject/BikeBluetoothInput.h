@@ -26,6 +26,8 @@ public:
 	BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef);
 	~BikeBluetoothInput();
 
+
+	void ReceivePowerNotification(SimpleBLE::ByteArray payload);
 private:
 
 	FThreadSafeBool FirstRun = true;
