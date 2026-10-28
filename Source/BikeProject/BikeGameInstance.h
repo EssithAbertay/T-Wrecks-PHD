@@ -7,12 +7,15 @@
 #include "BikeMobileInput.h"
 #include "BikeProjectStatsStruct.h"
 
+
+
 // Includes for bluetooth input
 #include "BikeBluetoothInput.h"
+#include "BikeBluetoothConnections.h"
 
 #include "BikeGameInstance.generated.h"
 
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceId, FString, BluetoothDeviceAddress, int, BluetoothPeripheralArrayPosition);
 
 UCLASS()
 class BIKEPROJECT_API UBikeGameInstance : public UGameInstance
@@ -116,10 +119,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopBluetoothTask();
 
-	void AddToDeviceArray(FString NewDevice);
+	void AddToDeviceArray(FString NewID, FString NewAddress);
 
 	UFUNCTION(BlueprintCallable)
-	TArray<FString> GetBluetoothDeviceArray() const;
+	TArray<FBluetoothDeviceStruct> GetBluetoothDeviceArray() const;
+
 	UFUNCTION(BlueprintCallable)
 	void SetDesiredConnection(int connectionValue);
 	UFUNCTION()
@@ -130,7 +134,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetBluetoothPower(float BTPower);
 
+	UFUNCTION(BlueprintCallable)
+	void MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, int BluetoothPeripheralArrayPosition);
 
+	UPROPERTY(BlueprintAssignable)
+	FBluetoothDeviceScanned BluetoothDeviceSignal;	
+	
+	UFUNCTION(BlueprintCallable)
+	void BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition);
 private:
 	TArray<unsigned short> EventTimes;
 	TArray<unsigned short> RevolutionCounts;
@@ -167,7 +178,7 @@ private:
 	BikeBluetoothInput* BluetoothTask;
 
 	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
-	TArray<FString> BluetoothDeviceArr;
+	TArray<FBluetoothDeviceStruct> BluetoothDevices;
 
 	UPROPERTY(BlueprintSetter = SetDesiredConnection)
 	int desiredConnection = -1;

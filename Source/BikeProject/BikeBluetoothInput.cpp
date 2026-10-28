@@ -63,151 +63,188 @@ void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
 	GameInstanceRef->SetBluetoothPower(Power);
 }
 
+bool BikeBluetoothInput::ConnectToPeripheral()
+{
+	int indexToConnect = RequestedPeripheralArrayPosition;
+
+	if (!(indexToConnect >= peripherals.size()))
+	{
+		ConnectedPeripheral = peripherals[indexToConnect];
+	}
+	else 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Peripheral Out Of Bounds!"));
+		return false;
+	}
+
+	FString DeviceID = UTF8_TO_TCHAR(ConnectedPeripheral.identifier().c_str());
+
+	FString Msg = TEXT("Connecting to peripheral: ") + DeviceID;
+
+	ConnectedPeripheral.connect();
+
+	Connected = true;
+
+	UE_LOG(LogTemp, Warning, TEXT("Connected!"));
+
+	UE_LOG(LogTemp, Warning, TEXT("Discovered characteristics:"));
+
+	bool bFoundReadableCharacteristic = false;
+
+	for (SimpleBLE::Service& service : ConnectedPeripheral.services())
+	{
+		for (auto& characteristic : service.characteristics())
+		{
+			const bool bCanRead = characteristic.can_read();
+			const bool bCanNotify = characteristic.can_notify();
+			const bool bCanIndicate = characteristic.can_indicate();
+
+			if (bCanRead)
+			{
+				bFoundReadableCharacteristic = true;
+			}
+
+			const FString ServiceUUID =
+				UTF8_TO_TCHAR(service.uuid().c_str());
+
+			const FString CharacteristicUUID =
+				UTF8_TO_TCHAR(characteristic.uuid().c_str());
+
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s"),
+				*ServiceUUID,
+				*CharacteristicUUID,
+				bCanRead ? TEXT("Yes") : TEXT("No"),
+				bCanNotify ? TEXT("Yes") : TEXT("No"),
+				bCanIndicate ? TEXT("Yes") : TEXT("No")
+
+			);
+		}
+	}
+
+	if (!bFoundReadableCharacteristic)
+	{
+		UE_LOG(
+			LogTemp,
+			Warning,
+			TEXT("The peripheral has no readable characteristics.")
+		);
+
+		ConnectedPeripheral.disconnect();
+		return false;
+	}
+
+	std::string ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
+	std::string CharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
+	ConnectedPeripheral.notify(ServiceUUID, CharacteristicUUID, [this](SimpleBLE::ByteArray payload) {ReceivePowerNotification(payload); });
+	
+
+	return true;
+}
+
+void BikeBluetoothInput::RequestConnection(const FString& p_RequestedConnectionAddress, EBluetoothConnectionDevice p_RequestedDevice, int PeripheralArrayPosition)
+{
+	 RequestedConnectionAddress = p_RequestedConnectionAddress;
+	 RequestedDevice = p_RequestedDevice;
+	 RequestedPeripheralArrayPosition = PeripheralArrayPosition;
+	 ConnectionRequested = true;
+
+	 UE_LOG(LogTemp, Warning, TEXT("Request Recieved, will attempt to connect to peripheral"));
+}
+
 bool BikeBluetoothInput::Init()
 {
 	UE_LOG(LogTemp, Warning, TEXT("INIT of bluetooth task thread"));
 
+	if (!SimpleBLE::Adapter::bluetooth_enabled()) {
+		UE_LOG(LogTemp, Warning, TEXT("Bluetooth disabled"));
+		UE_LOG(LogTemp, Warning, TEXT("Returning false in init, exiting thread"));
+		return false;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Bluetooth enabled, REALLY LONG BIT OF TEXT ON THE END TO MAKE IT EASIER TO SEE IN THE LOG"));
+
+	auto adapters = SimpleBLE::Adapter::get_adapters();
+	if (adapters.empty()) {
+		UE_LOG(LogTemp, Warning, TEXT("No Bluetooth adapters found."));
+		UE_LOG(LogTemp, Warning, TEXT("Bluetooth disabled"));
+		return false;
+	}
+
+	Adapter = adapters[0];
+	UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
+
+
+	Adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
+	Adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
+	Adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
+
+	std::string id = peripheral.identifier();
+
+	std::string address = peripheral.address();
+
+	FString DeviceID = UTF8_TO_TCHAR(id.c_str());
+	FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
+
+		
+		if (peripheral.is_connectable() && DeviceID != "") // if connectable and has an actual name, all our intended devices have IDs so can filter out others for sake of ease of use
+		{
+			auto x = peripheral.services();
+			peripherals.push_back(peripheral);
+			GameInstanceRef->AddToDeviceArray(DeviceID, DeviceAddress);
+			GameInstanceRef->BroadcastNewDevice(DeviceID, DeviceAddress, peripherals.size()-1);
+			
+			
+			FString Msg = TEXT("Found device: ") + DeviceID + TEXT(" | Address: ") + DeviceAddress + TEXT("Counter: ") + FString::SanitizeFloat(counter) + TEXT(" PASSED: ") + FString::SanitizeFloat(peripherals.size() - 1);
+			counter++;
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
+
+		}
+	});
 
     return true;
 }
 
 uint32 BikeBluetoothInput::Run()
 {
-    if (FirstRun) {
-        FirstRun = false;
-        UE_LOG(LogTemp, Warning, TEXT("RUN of bluetooth task thread"));
+     UE_LOG(LogTemp, Warning, TEXT("RUN of bluetooth task thread"));
 
-		if (!SimpleBLE::Adapter::bluetooth_enabled()) {
-			UE_LOG(LogTemp, Warning, TEXT("Bluetooth disabled"));
-			UE_LOG(LogTemp, Warning, TEXT("Returning false in init, exiting thread"));
-			return false;
-		}
+	 //scan for devices
+	 while (bRunThread && !Connecting)
+	 {
+		 if (!Connected && !ScanTimeOut)
+		 {
+			 if (!Adapter.scan_is_active()) // start a scan if one isn't active
+			 {
+				 Adapter.scan_start();
+				 //ScanStartTime = FPlatformTime::Seconds();
+				 //ScanTimeOut = false;
+			 }
 
-		UE_LOG(LogTemp, Warning, TEXT("Bluetooth enabled, REALLY LONG BIT OF TEXT ON THE END TO MAKE IT EASIER TO SEE IN THE LOG"));
+			 //if (FPlatformTime::Seconds() - ScanStartTime > ScanTime)
+			 //{
+				// ScanTimeOut = true;
+				// UE_LOG(LogTemp, Warning, TEXT("Scan timed out"));
 
-		auto adapters = SimpleBLE::Adapter::get_adapters();
-		if (adapters.empty()) {
-			UE_LOG(LogTemp, Warning, TEXT("No Bluetooth adapters found."));
-			UE_LOG(LogTemp, Warning, TEXT("Bluetooth disabled"));
-			return false;
-		}
+			 //}
+		 }
 
-		auto adapter = adapters[0];
-		UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
-
-
-		adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
-		adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
-		adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
-
-			std::string id = peripheral.identifier();
-			std::string address = peripheral.address();
-
-			FString DeviceId = UTF8_TO_TCHAR(id.c_str());
-			FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
-
-			FString Msg = TEXT("Found device: ") + DeviceId + TEXT(" | Address: ") + DeviceAddress;
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
-
-			FString ForArray = DeviceId + TEXT(" | ") + DeviceAddress;
-
-			if (peripheral.is_connectable()) {
-				peripherals.push_back(peripheral);
-				GameInstanceRef->AddToDeviceArray(ForArray);
-			}
-			});
-
-
-		adapter.scan_for(15000);
-
-    }
-
-
-	UE_LOG(LogTemp, Warning, TEXT("Waiting to connect to peripheral"));
-
-
-	int indexToConnect = -1;
-	//after scanning for devices, connect to one
-	while (!connected && bRunThread)
-	{
-		indexToConnect = GameInstanceRef->GetDesiredConnection();
-
-		// -1 is default value, when you get an actual number attempt to connect to it
-		if (indexToConnect != -1)
-		{
-			if (!(indexToConnect >= peripherals.size()))
+		 if (ConnectionRequested/* || ScanTimeOut*/)
+		 {
+			if (Adapter.scan_is_active()) // stop scanning if we are scanning already
 			{
-				ConnectedPeripheral = peripherals[indexToConnect];
+				Adapter.scan_stop();
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("Connecting to peripheral"));
-			ConnectedPeripheral.connect();
+			Connecting = true;
 
-			connected = true;
-			UE_LOG(LogTemp, Warning, TEXT("Connected!"));
+			ConnectToPeripheral();
+		 }
 
-			UE_LOG(LogTemp, Warning, TEXT("Discovered characteristics:"));
-
-			bool bFoundReadableCharacteristic = false;
-
-			for (SimpleBLE::Service& service : ConnectedPeripheral.services())
-			{
-				for (auto& characteristic : service.characteristics())
-				{
-					const bool bCanRead = characteristic.can_read();
-					const bool bCanNotify = characteristic.can_notify();
-					const bool bCanIndicate = characteristic.can_indicate();
-
-					if (bCanRead)
-					{
-						bFoundReadableCharacteristic = true;
-					}
-
-					const FString ServiceUUID =
-						UTF8_TO_TCHAR(service.uuid().c_str());
-
-					const FString CharacteristicUUID =
-						UTF8_TO_TCHAR(characteristic.uuid().c_str());
-
-					UE_LOG(
-						LogTemp,
-						Warning,
-						TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s"),
-						*ServiceUUID,
-						*CharacteristicUUID,
-						bCanRead ? TEXT("Yes") : TEXT("No"),
-						bCanNotify ? TEXT("Yes") : TEXT("No"),
-						bCanIndicate ? TEXT("Yes") : TEXT("No")
-
-					);
-				}
-			}
-
-			if (!bFoundReadableCharacteristic)
-			{
-				UE_LOG(
-					LogTemp,
-					Warning,
-					TEXT("The peripheral has no readable characteristics.")
-				);
-
-				ConnectedPeripheral.disconnect();
-				return false;
-			}
-
-			std::string ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
-			std::string CharacteristicUUID ="00002a63-0000-1000-8000-00805f9b34fb";
-			ConnectedPeripheral.notify(ServiceUUID, CharacteristicUUID, [this](SimpleBLE::ByteArray payload){ReceivePowerNotification(payload);});
-		}
-
-		FPlatformProcess::Sleep(0.03f);
-	}
-
-	while (bRunThread)
-	{
 		FPlatformProcess::Sleep(0.03F);
-	}
-
+	 }
     return 0;
 }
 

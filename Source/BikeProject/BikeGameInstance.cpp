@@ -6,7 +6,7 @@
 #include "HAL/FileManager.h" 
 #include "Engine/Engine.h" 
 
-
+#include "Async/Async.h"
 
 void UBikeGameInstance::Init()
 {
@@ -294,15 +294,16 @@ void UBikeGameInstance::StopBluetoothTask()
 	BluetoothTask = nullptr;
 }
 
-void UBikeGameInstance::AddToDeviceArray(FString NewDevice)
+void UBikeGameInstance::AddToDeviceArray(FString NewID, FString NewAddress)
 {
-	BluetoothDeviceArr.Add(NewDevice);
+	BluetoothDevices.Add({NewID, NewAddress});
 }
 
-TArray<FString> UBikeGameInstance::GetBluetoothDeviceArray() const
+TArray<FBluetoothDeviceStruct> UBikeGameInstance::GetBluetoothDeviceArray() const
 {
-	return BluetoothDeviceArr;
+	return BluetoothDevices;
 }
+
 
 void UBikeGameInstance::SetDesiredConnection(int connectionValue)
 {
@@ -322,4 +323,19 @@ float UBikeGameInstance::GetBluetoothPower() const
 void UBikeGameInstance::SetBluetoothPower(float BTPower)
 {
 	BluetoothPower = BTPower;
+}
+
+void UBikeGameInstance::MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, int BluetoothPeripheralArrayPosition)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Connection Request %s | Device Type %d | Array Position %d"), *RequestedConnectionAddress, static_cast<int32>(DeviceToConnect), BluetoothPeripheralArrayPosition)
+
+	BluetoothTask->RequestConnection(RequestedConnectionAddress, DeviceToConnect, BluetoothPeripheralArrayPosition);
+}
+
+void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition)
+{
+	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothDeviceAddress, BluetoothPeripheralArrayPosition]()
+		{
+			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothDeviceAddress, BluetoothPeripheralArrayPosition);
+	});
 }
