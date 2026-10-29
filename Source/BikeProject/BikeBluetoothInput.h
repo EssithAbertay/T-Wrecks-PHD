@@ -19,7 +19,8 @@ class BIKEPROJECT_API BikeBluetoothInput : public FRunnable
 	FRunnableThread* RunnableThread;
 	UBikeGameInstance* GameInstanceRef;
 	std::vector<SimpleBLE::Peripheral> peripherals;
-	SimpleBLE::Peripheral ConnectedPeripheral;
+	SimpleBLE::Peripheral ConnectedFrame;
+	SimpleBLE::Peripheral ConnectedTrainer;
 	SimpleBLE::Adapter Adapter;
 
 	FThreadSafeBool Connected = false;
@@ -31,9 +32,12 @@ public:
 	~BikeBluetoothInput();
 	void RequestConnection(const FString& RequestedConnectionAddress, EBluetoothConnectionDevice RequestedDevice, int PeripheralArrayPosition);
 
+	void HandleNotificationSetup(SimpleBLE::Peripheral* PeripheralToConnect, const std::string& RequestedConnectionServiceUUID, const  std::string& RequestedConnectionCharacteristicUUID, std::function<void(SimpleBLE::ByteArray)> Callback);
+
+
 	// used in the thread
 	void ReceivePowerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
-	bool ConnectToPeripheral();
+	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect);
 private:
 	FThreadSafeBool FirstRun = true;
 	FThreadSafeBool bRunThread = true;

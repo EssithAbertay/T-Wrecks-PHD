@@ -54,22 +54,22 @@ void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
 	}
 	
 	uint16 Flags = uint16(payload[0]) | (uint16(payload[1]) << 8);
-	FString flagData = FString::Printf(TEXT("%04X"), Flags);
+	FString flagData = FString::Printf(TEXT("%04X"), Flags); // should really invesitgate these further but not required
 
-	uint16 Power = uint16(payload[2]) |(uint16(payload[3]) << 8);
+	uint16 Power = uint16(payload[2]) |(uint16(payload[3]) << 8); // these are always the power flags
 
 	UE_LOG(LogTemp, Warning, TEXT("%u watts"), Power);
 
 	GameInstanceRef->SetBluetoothPower(Power);
 }
 
-bool BikeBluetoothInput::ConnectToPeripheral()
+bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralToConnect)
 {
 	int indexToConnect = RequestedPeripheralArrayPosition;
 
 	if (!(indexToConnect >= peripherals.size()))
 	{
-		ConnectedPeripheral = peripherals[indexToConnect];
+		PeripheralToConnect = &peripherals[indexToConnect];
 	}
 	else 
 	{
@@ -77,69 +77,47 @@ bool BikeBluetoothInput::ConnectToPeripheral()
 		return false;
 	}
 
-	FString DeviceID = UTF8_TO_TCHAR(ConnectedPeripheral.identifier().c_str());
+	FString DeviceID = UTF8_TO_TCHAR(PeripheralToConnect->identifier().c_str());
 
 	FString Msg = TEXT("Connecting to peripheral: ") + DeviceID;
 
-	ConnectedPeripheral.connect();
+	PeripheralToConnect->connect();
 
 	Connected = true;
 
 	UE_LOG(LogTemp, Warning, TEXT("Connected!"));
 
-	UE_LOG(LogTemp, Warning, TEXT("Discovered characteristics:"));
 
-	bool bFoundReadableCharacteristic = false;
-
-	for (SimpleBLE::Service& service : ConnectedPeripheral.services())
-	{
-		for (auto& characteristic : service.characteristics())
+	for (SimpleBLE::Service& service : PeripheralToConnect->services())
 		{
-			const bool bCanRead = characteristic.can_read();
-			const bool bCanNotify = characteristic.can_notify();
-			const bool bCanIndicate = characteristic.can_indicate();
-
-			if (bCanRead)
+			for (auto& characteristic : service.characteristics())
 			{
-				bFoundReadableCharacteristic = true;
+				const bool bCanRead = characteristic.can_read();
+				const bool bCanNotify = characteristic.can_notify();
+				const bool bCanIndicate = characteristic.can_indicate();
+		
+		
+				const FString ServiceUUID =
+					UTF8_TO_TCHAR(service.uuid().c_str());
+		
+				const FString CharacteristicUUID =
+					UTF8_TO_TCHAR(characteristic.uuid().c_str());
+		
+				UE_LOG(
+					LogTemp,
+					Warning,
+					TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s"),
+					*ServiceUUID,
+					*CharacteristicUUID,
+					bCanRead ? TEXT("Yes") : TEXT("No"),
+					bCanNotify ? TEXT("Yes") : TEXT("No"),
+					bCanIndicate ? TEXT("Yes") : TEXT("No")
+		
+				);
 			}
-
-			const FString ServiceUUID =
-				UTF8_TO_TCHAR(service.uuid().c_str());
-
-			const FString CharacteristicUUID =
-				UTF8_TO_TCHAR(characteristic.uuid().c_str());
-
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s"),
-				*ServiceUUID,
-				*CharacteristicUUID,
-				bCanRead ? TEXT("Yes") : TEXT("No"),
-				bCanNotify ? TEXT("Yes") : TEXT("No"),
-				bCanIndicate ? TEXT("Yes") : TEXT("No")
-
-			);
-		}
 	}
 
-	if (!bFoundReadableCharacteristic)
-	{
-		UE_LOG(
-			LogTemp,
-			Warning,
-			TEXT("The peripheral has no readable characteristics.")
-		);
 
-		ConnectedPeripheral.disconnect();
-		return false;
-	}
-
-	std::string ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
-	std::string CharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
-	ConnectedPeripheral.notify(ServiceUUID, CharacteristicUUID, [this](SimpleBLE::ByteArray payload) {ReceivePowerNotification(payload); });
-	
 
 	return true;
 }
@@ -152,6 +130,12 @@ void BikeBluetoothInput::RequestConnection(const FString& p_RequestedConnectionA
 	 ConnectionRequested = true;
 
 	 UE_LOG(LogTemp, Warning, TEXT("Request Recieved, will attempt to connect to peripheral"));
+}
+
+// i wonder if these two functions could be the same quite easily
+void BikeBluetoothInput::HandleNotificationSetup(SimpleBLE::Peripheral* PeripheralToConnect, const std::string& RequestedConnectionServiceUUID, const std::string& RequestedConnectionCharacteristicUUID, std::function<void(SimpleBLE::ByteArray)> Callback)
+{
+	PeripheralToConnect->notify(RequestedConnectionServiceUUID, RequestedConnectionCharacteristicUUID, [Callback](SimpleBLE::ByteArray payload) {Callback(payload); });
 }
 
 bool BikeBluetoothInput::Init()
@@ -176,7 +160,6 @@ bool BikeBluetoothInput::Init()
 	Adapter = adapters[0];
 	UE_LOG(LogTemp, Warning, TEXT("Using adapter: OUTPUT INFO HERE"));
 
-
 	Adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
 	Adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
 	Adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
@@ -188,7 +171,6 @@ bool BikeBluetoothInput::Init()
 	FString DeviceID = UTF8_TO_TCHAR(id.c_str());
 	FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
 
-		
 		if (peripheral.is_connectable() && DeviceID != "") // if connectable and has an actual name, all our intended devices have IDs so can filter out others for sake of ease of use
 		{
 			auto x = peripheral.services();
@@ -240,7 +222,44 @@ uint32 BikeBluetoothInput::Run()
 
 			Connecting = true;
 
-			ConnectToPeripheral();
+			SimpleBLE::Peripheral* PeripheralToConnect = nullptr;
+			std::string ServiceUUID;
+			std::string CharacteristicUUID;
+			std::function<void(SimpleBLE::ByteArray)> Callback;
+			if (RequestedDevice == EBluetoothConnectionDevice::FRAME)
+			{
+				PeripheralToConnect = &ConnectedFrame;
+
+				ServiceUUID = "347b0001-7635-408b-8918-8ff3949ce592";
+				CharacteristicUUID = "347b0043-7635-408b-8918-8ff3949ce592";
+
+				Callback = [this](SimpleBLE::ByteArray Payload)
+				{
+					ReceivePowerNotification(Payload);
+				};
+			}
+			else if (RequestedDevice == EBluetoothConnectionDevice::TRAINER)
+			{
+				PeripheralToConnect = &ConnectedTrainer;
+
+				ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
+				CharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
+
+				Callback = [this](SimpleBLE::ByteArray Payload)
+				{
+					ReceivePowerNotification(Payload);
+				};
+			}
+
+			if (PeripheralToConnect != nullptr)
+			{
+				ConnectToPeripheral(PeripheralToConnect);
+				
+				if(PeripheralToConnect->is_connected())
+				{ 
+					HandleNotificationSetup(PeripheralToConnect, ServiceUUID, CharacteristicUUID, Callback); 
+				}
+			}
 		 }
 
 		FPlatformProcess::Sleep(0.03F);
@@ -252,12 +271,17 @@ void BikeBluetoothInput::Stop()
 {
    UE_LOG(LogTemp, Warning, TEXT("STOP of bluetooth task thread"));
 
-	if (ConnectedPeripheral.initialized() && ConnectedPeripheral.is_connected())
+	if (ConnectedFrame.initialized() && ConnectedFrame.is_connected())
 	{
-		ConnectedPeripheral.disconnect();
-		UE_LOG(LogTemp, Warning, TEXT("BLE device disconnected"));
+		ConnectedFrame.disconnect();
+		UE_LOG(LogTemp, Warning, TEXT("Frame device disconnected"));
 	}
    
+	if (ConnectedTrainer.initialized() && ConnectedTrainer.is_connected())
+	{
+		ConnectedTrainer.disconnect();
+		UE_LOG(LogTemp, Warning, TEXT("Trainer device disconnected"));
+	}
 
    bRunThread = false;
 }
