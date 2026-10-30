@@ -15,7 +15,7 @@
 
 #include "BikeGameInstance.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceId, FString, BluetoothDeviceAddress, int, BluetoothPeripheralArrayPosition);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceID, FString, BluetoothDeviceAddress, int, BluetoothPeripheralArrayPosition);
 
 UCLASS()
 class BIKEPROJECT_API UBikeGameInstance : public UGameInstance
@@ -137,11 +137,23 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, int BluetoothPeripheralArrayPosition);
 
+	UFUNCTION(BlueprintCallable)
+	void MakeScanStartStopRequest(bool bStartScan); // true to request a scan start, false to request a scan stop
+
 	UPROPERTY(BlueprintAssignable)
 	FBluetoothDeviceScanned BluetoothDeviceSignal;	
 	
 	UFUNCTION(BlueprintCallable)
 	void BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition);
+
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetControllerState() const;
+	UFUNCTION(BlueprintCallable)
+	void SetControllerState(int32 NewControllerState);
+
+	UFUNCTION(BlueprintCallable)
+	bool IsInputPressed(EBluetoothInputs Input) const;
 private:
 	TArray<unsigned short> EventTimes;
 	TArray<unsigned short> RevolutionCounts;
@@ -185,4 +197,8 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetBluetoothPower, BlueprintSetter = SetBluetoothPower)
 	float BluetoothPower;
+
+	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)
+	int32 ControllerState;
+
 };

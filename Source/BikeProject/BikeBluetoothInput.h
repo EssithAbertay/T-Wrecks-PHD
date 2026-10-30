@@ -34,9 +34,15 @@ public:
 
 	void HandleNotificationSetup(SimpleBLE::Peripheral* PeripheralToConnect, const std::string& RequestedConnectionServiceUUID, const  std::string& RequestedConnectionCharacteristicUUID, std::function<void(SimpleBLE::ByteArray)> Callback);
 
+	// requests are used to maintain thread safety
+	void RequestScanStart();
+	void RequestScanStop();
 
 	// used in the thread
 	void ReceivePowerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
+	void ReceiveControllerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
+
+
 	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect);
 private:
 	FThreadSafeBool FirstRun = true;
@@ -47,8 +53,13 @@ private:
 	EBluetoothConnectionDevice RequestedDevice;
 	int RequestedPeripheralArrayPosition;
 
+
+
 	FThreadSafeBool ConnectionRequested = false;
 	FThreadSafeBool Connecting = false;
+
+	FThreadSafeBool RequestedScanStart = false;
+	FThreadSafeBool RequestedScanStop = false;
 
 	double ScanTime = 15;
 	double ScanStartTime = 0;

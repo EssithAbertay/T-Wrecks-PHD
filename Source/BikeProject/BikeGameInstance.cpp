@@ -332,10 +332,43 @@ void UBikeGameInstance::MakeConnectionRequest(EBluetoothConnectionDevice DeviceT
 	BluetoothTask->RequestConnection(RequestedConnectionAddress, DeviceToConnect, BluetoothPeripheralArrayPosition);
 }
 
+void UBikeGameInstance::MakeScanStartStopRequest(bool bStartScan)
+{
+	if (bStartScan)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Requesting Scan Start"));
+
+		BluetoothTask->RequestScanStart();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Requesting Scan Stop"));
+
+		BluetoothTask->RequestScanStop();
+	}
+}
+
 void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothDeviceAddress, BluetoothPeripheralArrayPosition]()
 		{
 			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothDeviceAddress, BluetoothPeripheralArrayPosition);
 	});
+}
+
+int32 UBikeGameInstance::GetControllerState() const
+{
+	return ControllerState;
+}
+
+void UBikeGameInstance::SetControllerState(int32 NewControllerState)
+{
+	ControllerState = NewControllerState;
+}
+
+bool UBikeGameInstance::IsInputPressed(EBluetoothInputs Input) const
+{
+	const int32 Mask = 1u << static_cast<uint8>(Input);
+
+	return (ControllerState & Mask) != 0;
 }

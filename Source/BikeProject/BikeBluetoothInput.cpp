@@ -63,13 +63,35 @@ void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
 	GameInstanceRef->SetBluetoothPower(Power);
 }
 
+
+void BikeBluetoothInput::ReceiveControllerNotification(SimpleBLE::ByteArray payload)
+{
+
+	uint32 ControllerData =
+		(static_cast<uint32>(payload[3]) << 24) |
+		(static_cast<uint32>(payload[4]) << 16) |
+		(static_cast<uint32>(payload[5]) << 8) |
+		(static_cast<uint32>(payload[6]));
+
+	// Check all 32 bits
+	for (int32 Bit = 0; Bit < 32; Bit++)
+	{
+		if (ControllerData & (1u << Bit))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Input %d ACTIVE"), Bit);
+		}
+	}
+
+	GameInstanceRef->SetControllerState(ControllerData);
+}
+
 bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralToConnect)
 {
 	int indexToConnect = RequestedPeripheralArrayPosition;
 
 	if (!(indexToConnect >= peripherals.size()))
 	{
-		PeripheralToConnect = &peripherals[indexToConnect];
+		*PeripheralToConnect = peripherals[indexToConnect];
 	}
 	else 
 	{
@@ -117,8 +139,6 @@ bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralTo
 			}
 	}
 
-
-
 	return true;
 }
 
@@ -135,7 +155,17 @@ void BikeBluetoothInput::RequestConnection(const FString& p_RequestedConnectionA
 // i wonder if these two functions could be the same quite easily
 void BikeBluetoothInput::HandleNotificationSetup(SimpleBLE::Peripheral* PeripheralToConnect, const std::string& RequestedConnectionServiceUUID, const std::string& RequestedConnectionCharacteristicUUID, std::function<void(SimpleBLE::ByteArray)> Callback)
 {
-	PeripheralToConnect->notify(RequestedConnectionServiceUUID, RequestedConnectionCharacteristicUUID, [Callback](SimpleBLE::ByteArray payload) {Callback(payload); });
+	PeripheralToConnect->notify(RequestedConnectionServiceUUID, RequestedConnectionCharacteristicUUID, [Callback](SimpleBLE::ByteArray payload) {Callback(payload);});
+}
+
+void BikeBluetoothInput::RequestScanStart()
+{
+	RequestedScanStart = true;
+}
+
+void BikeBluetoothInput::RequestScanStop()
+{
+	RequestedScanStop = true;
 }
 
 bool BikeBluetoothInput::Init()
@@ -162,14 +192,13 @@ bool BikeBluetoothInput::Init()
 
 	Adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
 	Adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
-	Adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) {
+	Adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) 
+	{
+		std::string id = peripheral.identifier();
+		std::string address = peripheral.address();
 
-	std::string id = peripheral.identifier();
-
-	std::string address = peripheral.address();
-
-	FString DeviceID = UTF8_TO_TCHAR(id.c_str());
-	FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
+		FString DeviceID = UTF8_TO_TCHAR(id.c_str());
+		FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
 
 		if (peripheral.is_connectable() && DeviceID != "") // if connectable and has an actual name, all our intended devices have IDs so can filter out others for sake of ease of use
 		{
@@ -194,40 +223,50 @@ uint32 BikeBluetoothInput::Run()
      UE_LOG(LogTemp, Warning, TEXT("RUN of bluetooth task thread"));
 
 	 //scan for devices
-	 while (bRunThread && !Connecting)
+	 while (bRunThread)
 	 {
-		 if (!Connected && !ScanTimeOut)
+		 if (RequestedScanStart)
 		 {
+			 RequestedScanStart = false;
+
 			 if (!Adapter.scan_is_active()) // start a scan if one isn't active
 			 {
-				 Adapter.scan_start();
+				 Adapter.scan_start(); 
+				 
 				 //ScanStartTime = FPlatformTime::Seconds();
 				 //ScanTimeOut = false;
 			 }
-
-			 //if (FPlatformTime::Seconds() - ScanStartTime > ScanTime)
+		 }
+		 //if (FPlatformTime::Seconds() - ScanStartTime > ScanTime)
 			 //{
 				// ScanTimeOut = true;
 				// UE_LOG(LogTemp, Warning, TEXT("Scan timed out"));
 
 			 //}
+		 if (RequestedScanStop)
+		 {
+			 RequestedScanStop = false;
+
+			 if (Adapter.scan_is_active()) // stop a scan if one is active
+			 {
+				 Adapter.scan_stop();
+			 }
 		 }
 
-		 if (ConnectionRequested/* || ScanTimeOut*/)
+		 if (ConnectionRequested)
 		 {
-			if (Adapter.scan_is_active()) // stop scanning if we are scanning already
-			{
-				Adapter.scan_stop();
-			}
-
-			Connecting = true;
-
+			ConnectionRequested = false;
 			SimpleBLE::Peripheral* PeripheralToConnect = nullptr;
 			std::string ServiceUUID;
 			std::string CharacteristicUUID;
 			std::function<void(SimpleBLE::ByteArray)> Callback;
-			if (RequestedDevice == EBluetoothConnectionDevice::FRAME)
+			
+			
+			switch (RequestedDevice)
 			{
+			case EBluetoothConnectionDevice::FRAME:
+				UE_LOG(LogTemp, Warning, TEXT("connection to Frame!"));
+
 				PeripheralToConnect = &ConnectedFrame;
 
 				ServiceUUID = "347b0001-7635-408b-8918-8ff3949ce592";
@@ -235,11 +274,12 @@ uint32 BikeBluetoothInput::Run()
 
 				Callback = [this](SimpleBLE::ByteArray Payload)
 				{
-					ReceivePowerNotification(Payload);
+					ReceiveControllerNotification(Payload);
 				};
-			}
-			else if (RequestedDevice == EBluetoothConnectionDevice::TRAINER)
-			{
+				break;
+			case EBluetoothConnectionDevice::TRAINER:
+				UE_LOG(LogTemp, Warning, TEXT("connection to Trainer!"));
+
 				PeripheralToConnect = &ConnectedTrainer;
 
 				ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
@@ -249,6 +289,9 @@ uint32 BikeBluetoothInput::Run()
 				{
 					ReceivePowerNotification(Payload);
 				};
+				break;
+			default:
+				break;
 			}
 
 			if (PeripheralToConnect != nullptr)
@@ -269,7 +312,9 @@ uint32 BikeBluetoothInput::Run()
 
 void BikeBluetoothInput::Stop()
 {
-   UE_LOG(LogTemp, Warning, TEXT("STOP of bluetooth task thread"));
+	UE_LOG(LogTemp, Warning, TEXT("STOP of bluetooth task thread"));
+	UE_LOG(LogTemp, Warning, TEXT("Disconnecting connected devices"));
+
 
 	if (ConnectedFrame.initialized() && ConnectedFrame.is_connected())
 	{
@@ -283,5 +328,7 @@ void BikeBluetoothInput::Stop()
 		UE_LOG(LogTemp, Warning, TEXT("Trainer device disconnected"));
 	}
 
-   bRunThread = false;
+	UE_LOG(LogTemp, Warning, TEXT("Devices all disconnected"));
+
+    bRunThread = false;
 }
