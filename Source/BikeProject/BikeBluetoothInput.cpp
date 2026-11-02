@@ -165,6 +165,16 @@ bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralTo
 	return true;
 }
 
+EBluetoothConnectionState BikeBluetoothInput::GetFrameConnectionState()
+{
+	return FrameConnectionState;
+}
+
+EBluetoothConnectionState BikeBluetoothInput::GetTrainerConnectionState()
+{
+	return TrainerConnectionState;
+}
+
 void BikeBluetoothInput::RequestConnection(const FString& p_RequestedConnectionAddress, EBluetoothConnectionDevice p_RequestedDevice, int PeripheralArrayPosition)
 {
 	 RequestedConnectionAddress = p_RequestedConnectionAddress;
@@ -291,7 +301,7 @@ uint32 BikeBluetoothInput::Run()
 				UE_LOG(LogTemp, Warning, TEXT("connection to Frame!"));
 
 				PeripheralToConnect = &ConnectedFrame;
-
+				FrameConnectionState =  EBluetoothConnectionState::CONNECTING;
 				ServiceUUID = "347b0001-7635-408b-8918-8ff3949ce592";
 				CharacteristicUUID = "347b0043-7635-408b-8918-8ff3949ce592";
 
@@ -304,7 +314,7 @@ uint32 BikeBluetoothInput::Run()
 				UE_LOG(LogTemp, Warning, TEXT("connection to Trainer!"));
 
 				PeripheralToConnect = &ConnectedTrainer;
-
+				TrainerConnectionState = EBluetoothConnectionState::CONNECTING;
 				ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
 				CharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
 
@@ -325,6 +335,18 @@ uint32 BikeBluetoothInput::Run()
 				{ 
 					HandleNotificationSetup(PeripheralToConnect, ServiceUUID, CharacteristicUUID, Callback); 
 				}
+
+				switch (RequestedDevice)
+				{
+				case EBluetoothConnectionDevice::FRAME:
+					FrameConnectionState = EBluetoothConnectionState::CONNECTED;
+					break;
+				case EBluetoothConnectionDevice::TRAINER:
+					TrainerConnectionState = EBluetoothConnectionState::CONNECTED;
+					break;
+				default:
+					break;
+				}
 			}
 		 }
 
@@ -342,12 +364,15 @@ void BikeBluetoothInput::Stop()
 	if (ConnectedFrame.initialized() && ConnectedFrame.is_connected())
 	{
 		ConnectedFrame.disconnect();
+		FrameConnectionState = EBluetoothConnectionState::DISCONNECTED;
 		UE_LOG(LogTemp, Warning, TEXT("Frame device disconnected"));
+		
 	}
    
 	if (ConnectedTrainer.initialized() && ConnectedTrainer.is_connected())
 	{
 		ConnectedTrainer.disconnect();
+		TrainerConnectionState = EBluetoothConnectionState::DISCONNECTED;
 		UE_LOG(LogTemp, Warning, TEXT("Trainer device disconnected"));
 	}
 

@@ -173,6 +173,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BroadcastBluetoothInput(EBluetoothInputEvent InputEvent ,EBluetoothInputs input);
 
+	UFUNCTION(BlueprintCallable)
+	EBluetoothConnectionState GetFrameConnectionState();
+
+	UFUNCTION(BlueprintCallable)
+	EBluetoothConnectionState GetTrainerConnectionState();
+
 private:
 	TArray<unsigned short> EventTimes;
 	TArray<unsigned short> RevolutionCounts;
@@ -208,6 +214,10 @@ private:
 
 	BikeBluetoothInput* BluetoothTask;
 
+
+
+
+
 	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
 	TArray<FBluetoothDeviceStruct> BluetoothDevices;
 
@@ -219,5 +229,6 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)
 	int32 ControllerState;
+
 
 };

@@ -44,6 +44,9 @@ public:
 
 
 	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect);
+
+	EBluetoothConnectionState GetFrameConnectionState();
+	EBluetoothConnectionState GetTrainerConnectionState();
 private:
 	FThreadSafeBool FirstRun = true;
 	FThreadSafeBool bRunThread = true;
@@ -57,6 +60,10 @@ private:
 
 	FThreadSafeBool ConnectionRequested = false;
 	FThreadSafeBool Connecting = false;
+
+	EBluetoothConnectionState FrameConnectionState = EBluetoothConnectionState::UNCONNECTED;
+	EBluetoothConnectionState TrainerConnectionState = EBluetoothConnectionState::UNCONNECTED;
+	
 
 	FThreadSafeBool RequestedScanStart = false;
 	FThreadSafeBool RequestedScanStop = false;

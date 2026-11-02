@@ -394,3 +394,13 @@ void UBikeGameInstance::BroadcastBluetoothInput(EBluetoothInputEvent InputEvent,
 			
 		});
 }
+
+EBluetoothConnectionState UBikeGameInstance::GetFrameConnectionState()
+{
+	return BluetoothTask->GetFrameConnectionState();
+}
+
+EBluetoothConnectionState UBikeGameInstance::GetTrainerConnectionState()
+{
+	return BluetoothTask->GetTrainerConnectionState();
+}

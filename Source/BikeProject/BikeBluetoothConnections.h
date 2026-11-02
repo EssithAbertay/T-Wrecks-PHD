@@ -10,6 +10,14 @@ enum class EBluetoothConnectionDevice : uint8
 	TRAINER UMETA(DisplayName = "Trainer")
 };
 
+UENUM(BlueprintType)
+enum class EBluetoothConnectionState : uint8
+{
+	UNCONNECTED UMETA(DisplayName = "Unconnected"),
+	DISCONNECTED UMETA(DisplayName = "Disconnected"),
+	CONNECTED UMETA(DisplayName = "Connected"),
+	CONNECTING UMETA(DisplayName = "Connecting")
+};
 
 UENUM(BlueprintType)
 enum class EBluetoothInputs : uint8
