@@ -48,6 +48,16 @@ enum class EBluetoothInputs : uint8
 	//31
 };
 
+
+UENUM(BlueprintType)
+enum class EBluetoothInputEvent : uint8
+{
+	PRESSED UMETA(DisplayName = "Input Pressed"),
+	HELD UMETA(DisplayName = "Input Held"),
+	RELEASED UMETA(DisplayName = "Input Releasesd")
+};
+
+
 USTRUCT(BlueprintType)
 struct FBluetoothDeviceStruct
 {

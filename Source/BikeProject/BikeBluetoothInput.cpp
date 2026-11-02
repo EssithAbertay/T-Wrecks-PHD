@@ -65,20 +65,43 @@ void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
 
 
 void BikeBluetoothInput::ReceiveControllerNotification(SimpleBLE::ByteArray payload)
-{
+{	
+	PreviousControllerData = ControllerData;
 
-	uint32 ControllerData =
+	ControllerData =
 		(static_cast<uint32>(payload[3]) << 24) |
 		(static_cast<uint32>(payload[4]) << 16) |
 		(static_cast<uint32>(payload[5]) << 8) |
 		(static_cast<uint32>(payload[6]));
 
-	// Check all 32 bits
+
+	// processing the data, if it was
+	// Check all 32 bits, when checking we 
+
 	for (int32 Bit = 0; Bit < 32; Bit++)
 	{
-		if (ControllerData & (1u << Bit))
+		uint32 Mask = (1u << Bit);
+
+		bool pressed = (ControllerData & Mask) != 0;
+		bool wasPressed = (PreviousControllerData & Mask) != 0;
+
+		if (!wasPressed && pressed ) // pressed this tick
 		{
+			// send pressed signal
 			UE_LOG(LogTemp, Warning, TEXT("Input %d ACTIVE"), Bit);
+			GameInstanceRef->BroadcastBluetoothInput(EBluetoothInputEvent::PRESSED, EBluetoothInputs(Bit));
+		}
+		else if (wasPressed && pressed) // held this tick
+		{
+			// send held signal
+		}
+		else if (wasPressed && !pressed) // let go this tick
+		{
+			// send released signal
+		}
+		else // not pressed at all
+		{
+			// don't do anything, will be handled in let go this tick
 		}
 	}
 

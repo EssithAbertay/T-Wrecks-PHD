@@ -17,6 +17,11 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceID, FString, BluetoothDeviceAddress, int, BluetoothPeripheralArrayPosition);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputPressed, EBluetoothInputs, Input);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputReleased, EBluetoothInputs, Input);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputHeld, EBluetoothInputs, Input);
+
+
 UCLASS()
 class BIKEPROJECT_API UBikeGameInstance : public UGameInstance
 {
@@ -140,12 +145,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void MakeScanStartStopRequest(bool bStartScan); // true to request a scan start, false to request a scan stop
 
-	UPROPERTY(BlueprintAssignable)
-	FBluetoothDeviceScanned BluetoothDeviceSignal;	
-	
 	UFUNCTION(BlueprintCallable)
 	void BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition);
-
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetControllerState() const;
@@ -154,6 +155,24 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool IsInputPressed(EBluetoothInputs Input) const;
+
+	// signals
+	UPROPERTY(BlueprintAssignable)
+	FBluetoothDeviceScanned BluetoothDeviceSignal;	
+
+	UPROPERTY(BlueprintAssignable)
+	FBluetoothInputPressed BluetoothInputPressedSignal;
+
+	UPROPERTY(BlueprintAssignable)
+	FBluetoothInputReleased BluetoothInputReleasedSignal;
+
+	UPROPERTY(BlueprintAssignable)
+	FBluetoothInputHeld BluetoothInputHeldSignal;
+
+
+	UFUNCTION(BlueprintCallable)
+	void BroadcastBluetoothInput(EBluetoothInputEvent InputEvent ,EBluetoothInputs input);
+
 private:
 	TArray<unsigned short> EventTimes;
 	TArray<unsigned short> RevolutionCounts;

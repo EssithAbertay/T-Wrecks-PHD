@@ -372,3 +372,25 @@ bool UBikeGameInstance::IsInputPressed(EBluetoothInputs Input) const
 
 	return (ControllerState & Mask) != 0;
 }
+
+void UBikeGameInstance::BroadcastBluetoothInput(EBluetoothInputEvent InputEvent, EBluetoothInputs Input)
+{
+	AsyncTask(ENamedThreads::GameThread, [this, InputEvent, Input]()
+		{
+			switch (InputEvent)
+			{
+			case EBluetoothInputEvent::PRESSED:
+				BluetoothInputPressedSignal.Broadcast(Input);
+				break;
+			case EBluetoothInputEvent::HELD:
+				BluetoothInputHeldSignal.Broadcast(Input);
+				break;
+			case EBluetoothInputEvent::RELEASED:
+				BluetoothInputReleasedSignal.Broadcast(Input);
+				break;
+			default:
+				break;
+			}
+			
+		});
+}

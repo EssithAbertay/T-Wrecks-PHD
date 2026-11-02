@@ -64,6 +64,12 @@ private:
 	double ScanTime = 15;
 	double ScanStartTime = 0;
 	bool ScanTimeOut = false;
+
+
+
+	uint32 ControllerData;
+	uint32 PreviousControllerData;
+
 // requirements for runnable
 public:
     virtual bool Init() override;
