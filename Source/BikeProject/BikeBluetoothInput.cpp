@@ -140,8 +140,9 @@ bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralTo
 				const bool bCanRead = characteristic.can_read();
 				const bool bCanNotify = characteristic.can_notify();
 				const bool bCanIndicate = characteristic.can_indicate();
-		
-		
+				const bool bCanWriteCommand = characteristic.can_write_command();
+				const bool bCanWriteRequest = characteristic.can_write_request();
+
 				const FString ServiceUUID =
 					UTF8_TO_TCHAR(service.uuid().c_str());
 		
@@ -151,13 +152,14 @@ bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralTo
 				UE_LOG(
 					LogTemp,
 					Warning,
-					TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s"),
+					TEXT("Service: %s | Characteristic: %s | Read: %s | Notify: %s | Indicate: %s | Write Command: %s | Write Request: %s"),
 					*ServiceUUID,
 					*CharacteristicUUID,
 					bCanRead ? TEXT("Yes") : TEXT("No"),
 					bCanNotify ? TEXT("Yes") : TEXT("No"),
-					bCanIndicate ? TEXT("Yes") : TEXT("No")
-		
+					bCanIndicate ? TEXT("Yes") : TEXT("No"),
+					bCanWriteCommand ? TEXT("Yes") : TEXT("No"),
+					bCanWriteRequest ? TEXT("Yes") : TEXT("No")
 				);
 			}
 	}
@@ -237,14 +239,48 @@ bool BikeBluetoothInput::Init()
 		{
 			auto x = peripheral.services();
 			peripherals.push_back(peripheral);
+
+			// deprecated, remove when possible
 			GameInstanceRef->AddToDeviceArray(DeviceID, DeviceAddress);
-			GameInstanceRef->BroadcastNewDevice(DeviceID, DeviceAddress, peripherals.size()-1);
+
+
+			EBluetoothConnectionDevice DeviceType;
+
+
+			// check what type of device it is before connection, trainer or frame, trainer will have the bike power service, frame will have the custom controller service
+			for ( SimpleBLE::Service& service : peripheral.services())
+			{
+				const FString ServiceUUID =UTF8_TO_TCHAR(service.uuid().c_str());
+
+				// bike power service
+				if (ServiceUUID.Equals("00001818-0000-1000-8000-00805f9b34fb"))
+				{
+					DeviceType = EBluetoothConnectionDevice::TRAINER;
+					break;
+				}
+				else // this will grab all devices that don't have bike power service, as the controller schema service is not adevertised, if you only want the Sqaure check if DeviceID == "SQUARE"
+				{
+					DeviceType = EBluetoothConnectionDevice::FRAME;
+				}
+				
+
+
+				UE_LOG(
+					LogTemp,
+					Warning,
+					TEXT("Advertised Service: %s"),
+					*ServiceUUID
+				);
+			}
+
+
+			// tell the game instance the devices name, what type it is, and where it is in the array, super ugly, but since we don't reorder it anywhere it's fine!!!
+			GameInstanceRef->BroadcastNewDevice(DeviceID, DeviceType, peripherals.size()-1);
 			
-			
+			// debug message not really needed anymore
 			FString Msg = TEXT("Found device: ") + DeviceID + TEXT(" | Address: ") + DeviceAddress + TEXT("Counter: ") + FString::SanitizeFloat(counter) + TEXT(" PASSED: ") + FString::SanitizeFloat(peripherals.size() - 1);
 			counter++;
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
-
 		}
 	});
 

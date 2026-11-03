@@ -15,7 +15,7 @@
 
 #include "BikeGameInstance.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceID, FString, BluetoothDeviceAddress, int, BluetoothPeripheralArrayPosition);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceID, EBluetoothConnectionDevice, BluetoothConnectionDevice, int, BluetoothPeripheralArrayPosition);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputPressed, EBluetoothInputs, Input);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputReleased, EBluetoothInputs, Input);
@@ -146,7 +146,7 @@ public:
 	void MakeScanStartStopRequest(bool bStartScan); // true to request a scan start, false to request a scan stop
 
 	UFUNCTION(BlueprintCallable)
-	void BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition);
+	void BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition);
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetControllerState() const;
@@ -157,6 +157,7 @@ public:
 	bool IsInputPressed(EBluetoothInputs Input) const;
 
 	// signals
+
 	UPROPERTY(BlueprintAssignable)
 	FBluetoothDeviceScanned BluetoothDeviceSignal;	
 
@@ -169,6 +170,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FBluetoothInputHeld BluetoothInputHeldSignal;
 
+	// input management
 
 	UFUNCTION(BlueprintCallable)
 	void BroadcastBluetoothInput(EBluetoothInputEvent InputEvent ,EBluetoothInputs input);
@@ -178,6 +180,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	EBluetoothConnectionState GetTrainerConnectionState();
+
+	UFUNCTION(BlueprintCallable)
+	bool GetBothDevicesConnected(); // returns true if both trainer and frame have been connected
 
 private:
 	TArray<unsigned short> EventTimes;
@@ -214,10 +219,6 @@ private:
 
 	BikeBluetoothInput* BluetoothTask;
 
-
-
-
-
 	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
 	TArray<FBluetoothDeviceStruct> BluetoothDevices;
 
@@ -229,6 +230,4 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)
 	int32 ControllerState;
-
-
 };

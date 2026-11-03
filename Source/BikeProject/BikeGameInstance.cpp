@@ -348,11 +348,11 @@ void UBikeGameInstance::MakeScanStartStopRequest(bool bStartScan)
 	}
 }
 
-void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, FString BluetoothDeviceAddress, int BluetoothPeripheralArrayPosition)
+void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothDeviceAddress, BluetoothPeripheralArrayPosition]()
-		{
-			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothDeviceAddress, BluetoothPeripheralArrayPosition);
+	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothConnectionDevice, BluetoothPeripheralArrayPosition]()
+	{
+			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothConnectionDevice, BluetoothPeripheralArrayPosition);
 	});
 }
 
@@ -403,4 +403,9 @@ EBluetoothConnectionState UBikeGameInstance::GetFrameConnectionState()
 EBluetoothConnectionState UBikeGameInstance::GetTrainerConnectionState()
 {
 	return BluetoothTask->GetTrainerConnectionState();
+}
+
+bool UBikeGameInstance::GetBothDevicesConnected()
+{
+	return (BluetoothTask->GetFrameConnectionState() == EBluetoothConnectionState::CONNECTED && BluetoothTask->GetTrainerConnectionState() == EBluetoothConnectionState::CONNECTED);
 }
