@@ -245,12 +245,23 @@ bool BikeBluetoothInput::Init()
 
 
 			EBluetoothConnectionDevice DeviceType;
+			for (SimpleBLE::Service& service : peripheral.services())
+			{
+				const FString ServiceUUID = UTF8_TO_TCHAR(service.uuid().c_str());
 
+				UE_LOG(
+					LogTemp,
+					Warning,
+					TEXT("Advertised Service: %s"),
+					*ServiceUUID
+				);
+			}
 
 			// check what type of device it is before connection, trainer or frame, trainer will have the bike power service, frame will have the custom controller service
 			for ( SimpleBLE::Service& service : peripheral.services())
 			{
 				const FString ServiceUUID =UTF8_TO_TCHAR(service.uuid().c_str());
+				
 
 				// bike power service
 				if (ServiceUUID.Equals("00001818-0000-1000-8000-00805f9b34fb"))
@@ -265,12 +276,7 @@ bool BikeBluetoothInput::Init()
 				
 
 
-				UE_LOG(
-					LogTemp,
-					Warning,
-					TEXT("Advertised Service: %s"),
-					*ServiceUUID
-				);
+			
 			}
 
 
