@@ -38,6 +38,9 @@ public:
 	void RequestScanStart();
 	void RequestScanStop();
 
+	void  RequestResistanceChange(int NewResistance);
+
+
 	// used in the thread
 	void ReceivePowerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
 	void ReceiveControllerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
@@ -68,6 +71,9 @@ private:
 	FThreadSafeBool RequestedScanStart = false;
 	FThreadSafeBool RequestedScanStop = false;
 
+
+	FThreadSafeBool FTMSPresent = false;
+
 	double ScanTime = 15;
 	double ScanStartTime = 0;
 	bool ScanTimeOut = false;
@@ -76,6 +82,22 @@ private:
 
 	uint32 ControllerData;
 	uint32 PreviousControllerData;
+
+
+	float MinimumResistance = 0;
+	float MaximumResistnace = 0;
+	float ResistanceIncrement = 0;
+	float CurrentResistance = 0.0f;
+
+	FThreadSafeBool ResistanceSupported = false;
+	FThreadSafeBool ResistanceControlSupported = false;
+	FThreadSafeBool RequestedResistanceChange = false;
+
+
+	// internal functions
+
+	void HandleFTMSSetup();
+
 
 // requirements for runnable
 public:

@@ -47,19 +47,57 @@ BikeBluetoothInput::~BikeBluetoothInput()
 void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
 {
 	FString HexData;
+	int16 Power;
 
-	for (uint8 Byte : payload)
+	for (uint8 Byte : payload) // process the data we have recieved
 	{
 		HexData += FString::Printf(TEXT("%02X"), Byte);
 	}
 	
-	uint16 Flags = uint16(payload[0]) | (uint16(payload[1]) << 8);
-	FString flagData = FString::Printf(TEXT("%04X"), Flags); // should really invesitgate these further but not required
 
-	uint16 Power = uint16(payload[2]) |(uint16(payload[3]) << 8); // these are always the power flags
+	if (FTMSPresent) // if ftms is present the bits we scan are different to when using PMS
+	{
+		if (payload.size() < 2) // if the data doesn't contain the flags for whatever reason
+		{
+			return;
+		}
 
-	UE_LOG(LogTemp, Warning, TEXT("%u watts"), Power);
+		uint16_t flags = uint16(payload[0]) | (uint16(payload[1]) << 8);
 
+		if (!(flags & (1 << 6)))
+		{
+			return; // bit 6 of flags indicates whether power is present
+		}
+
+		size_t offset = 2;
+
+		// Skip optional fields before instantaneous power
+
+		if (!(flags & (1 << 0))) offset += 2; // Speed
+		if (flags & (1 << 1)) offset += 2;    // Average speed
+		if (flags & (1 << 2)) offset += 2;    // Cadence
+		if (flags & (1 << 3)) offset += 2;    // Average cadence
+		if (flags & (1 << 4)) offset += 3;    // Total distance
+		if (flags & (1 << 5)) offset += 2;    // Resistance
+
+
+		if (offset + 2 > payload.size())
+			return;
+
+		Power = static_cast<int16>((uint16(payload[offset]) | (uint16(payload[offset + 1]) << 8)));
+
+		// Shouldn't be hard to read speed here as well if you want to!
+	}
+	else // read power from PMS
+	{
+		uint16 Flags = uint16(payload[0]) | (uint16(payload[1]) << 8);
+		FString flagData = FString::Printf(TEXT("%04X"), Flags); // should really invesitgate these further but not required
+
+		Power = static_cast<int16>(uint16(payload[2]) | (uint16(payload[3]) << 8)); // these are always the power flags
+
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%d watts"), Power);
 	GameInstanceRef->SetBluetoothPower(Power);
 }
 
@@ -203,6 +241,53 @@ void BikeBluetoothInput::RequestScanStop()
 	RequestedScanStop = true;
 }
 
+void BikeBluetoothInput::RequestResistanceChange(int NewResistance)
+{
+}
+
+void BikeBluetoothInput::HandleFTMSSetup()
+{
+	// FTMS setup, we want to read the resistance max, increment, and current, and set up how it can be changed!
+
+	// we rewrite the FTMS UUID so much that it should really be stored as a variable 
+	std::string ServiceUUIDX ="00001826-0000-1000-8000-00805f9b34fb";
+	std::string CharacteristicUUIDX ="00002ad6-0000-1000-8000-00805f9b34fb";
+
+
+	SimpleBLE::ByteArray Data = ConnectedTrainer.read(ServiceUUIDX, CharacteristicUUIDX);
+
+	if (Data.size() < 3)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to read FTMS resistance range"));
+		return;
+	}
+
+	for (int32 i = 0; i < Data.size(); i++)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Byte %d: 0x%02X"),
+			i, static_cast<uint8>(Data[i]));
+	}
+
+	MinimumResistance =
+		static_cast<uint16>(static_cast<uint8>(Data[0])) |
+		(static_cast<uint16>(static_cast<uint8>(Data[1])) << 8);
+
+	MaximumResistnace =
+		static_cast<uint16>(static_cast<uint8>(Data[2])) |
+		(static_cast<uint16>(static_cast<uint8>(Data[3])) << 8);
+
+	ResistanceIncrement =
+		static_cast<uint16>(static_cast<uint8>(Data[4])) |
+		(static_cast<uint16>(static_cast<uint8>(Data[5])) << 8);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("FTMS Resistance - Min: %.1f | Max: %.1f | Increment: %.1f"),
+		MinimumResistance,
+		MaximumResistnace,
+		ResistanceIncrement
+	);
+}
+
 bool BikeBluetoothInput::Init()
 {
 	UE_LOG(LogTemp, Warning, TEXT("INIT of bluetooth task thread"));
@@ -261,8 +346,6 @@ bool BikeBluetoothInput::Init()
 			for ( SimpleBLE::Service& service : peripheral.services())
 			{
 				const FString ServiceUUID =UTF8_TO_TCHAR(service.uuid().c_str());
-				
-
 				// bike power service
 				if (ServiceUUID.Equals("00001818-0000-1000-8000-00805f9b34fb"))
 				{
@@ -273,10 +356,6 @@ bool BikeBluetoothInput::Init()
 				{
 					DeviceType = EBluetoothConnectionDevice::FRAME;
 				}
-				
-
-
-			
 			}
 
 
@@ -357,6 +436,8 @@ uint32 BikeBluetoothInput::Run()
 
 				PeripheralToConnect = &ConnectedTrainer;
 				TrainerConnectionState = EBluetoothConnectionState::CONNECTING;
+
+				// these are the PMS (power service) UUIDs, used as a fallback if FTMS is not present
 				ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
 				CharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
 
@@ -375,6 +456,31 @@ uint32 BikeBluetoothInput::Run()
 				
 				if(PeripheralToConnect->is_connected())
 				{ 
+					// for the trainer, we want to connect to FTMS, if the device does not have FTMS then we will use PMS as a fallback!
+					if (RequestedDevice == EBluetoothConnectionDevice::TRAINER)
+					{
+						// check for FTMS
+						std::string FTMSUUID = "00001826-0000-1000-8000-00805f9b34fb";
+						FTMSPresent = false;
+						UE_LOG(LogTemp, Warning, TEXT("LOOKING FOR FTMS"))
+						for (SimpleBLE::Service& service : PeripheralToConnect->services())
+						{
+							
+							if (service.uuid() == FTMSUUID)
+							{
+								UE_LOG(LogTemp, Warning, TEXT("FTMS FOUND!"));
+								FTMSPresent = true;
+								
+								ServiceUUID = FTMSUUID;
+								CharacteristicUUID = "00002ad2-0000-1000-8000-00805f9b34fb";
+								HandleFTMSSetup();
+								break; // we've found FTMS so no point in continuing
+								// TODO: Maybe check for the bike power characteristic as well?
+							}
+						}
+					}
+
+
 					HandleNotificationSetup(PeripheralToConnect, ServiceUUID, CharacteristicUUID, Callback); 
 				}
 
