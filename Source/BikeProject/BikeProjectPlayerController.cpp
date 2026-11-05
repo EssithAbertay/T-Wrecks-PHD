@@ -39,6 +39,18 @@ void ABikeProjectPlayerController::BeginPlay()
 	ABikeCharacter* PawnInstanceRef = Cast<ABikeCharacter>(GetPawn());
 	SetViewTarget(PawnInstanceRef);
 	PowerLevelMax = PawnInstanceRef->GetRawPower(3);
+
+
+	// setting up the ble input 
+
+
+	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
+
+	if (GameInstanceRef)
+	{
+		GameInstanceRef->BluetoothInputPressedSignal.AddDynamic(this,&ABikeProjectPlayerController::HandleInputPressed);
+	}
+
 }
 
 // Called every frame
@@ -269,4 +281,58 @@ void ABikeProjectPlayerController::SetMoveEnum_Implementation(EPlayerMove NewSta
 EPlayerMove ABikeProjectPlayerController::GetMoveEnum() const
 {
 	return PlayerMoveEnum;
+}
+
+void ABikeProjectPlayerController::HandleInputPressed(EBluetoothInputs Input)
+{
+	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
+
+
+	switch (Input)
+	{
+	case EBluetoothInputs::LFRONTSHIFT:
+		GameInstanceRef->MakeGearChangeRequest(false);
+		break;
+	case EBluetoothInputs::LBACKSHIFT:
+		break;
+	case EBluetoothInputs::LEFTA:
+		break;
+	case EBluetoothInputs::UPA:
+		break;
+	case EBluetoothInputs::RIGHTA:
+		break;
+	case EBluetoothInputs::DOWNA:
+		break;
+	case EBluetoothInputs::SQUARE:
+		break;
+	case EBluetoothInputs::CROSS:
+		break;
+	case EBluetoothInputs::LBRAKE:
+		break;
+	case EBluetoothInputs::LINSIDESHIFT:
+		break;
+	case EBluetoothInputs::RFRONTSHIFT:
+		GameInstanceRef->MakeGearChangeRequest(true);
+		break;
+	case EBluetoothInputs::RBACKSHIFT:
+		break;
+	case EBluetoothInputs::ABUT:
+		break;
+	case EBluetoothInputs::YBUT:
+		break;
+	case EBluetoothInputs::ZBUT:
+		break;
+	case EBluetoothInputs::BBUT:
+		break;
+	case EBluetoothInputs::TRIANGLE:
+		break;
+	case EBluetoothInputs::CIRCLE:
+		break;
+	case EBluetoothInputs::RBRAKE:
+		break;
+	case EBluetoothInputs::RINSIDESHIFT:
+		break;
+	default:
+		break;
+	}
 }

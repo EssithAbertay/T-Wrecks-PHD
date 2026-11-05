@@ -348,6 +348,38 @@ void UBikeGameInstance::MakeScanStartStopRequest(bool bStartScan)
 	}
 }
 
+void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
+{
+	if (bGearUp)
+	{
+		if (CurrentGear == MaxGear) // can't exceed max gear (12 by default)
+		{
+			return;
+		}
+		CurrentGear++;
+		BluetoothTask->RequestGearChange(CurrentGear);
+	}
+	else
+	{
+		if (CurrentGear == 1) // can't go below minimum gear (1 by default)
+		{
+			return;
+		}
+		CurrentGear--;
+		BluetoothTask->RequestGearChange(CurrentGear);
+	}
+}
+
+int UBikeGameInstance::GetCurrentGear() const
+{
+	return CurrentGear;
+}
+
+int UBikeGameInstance::GetMaxGear() const
+{
+	return MaxGear;
+}
+
 void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothConnectionDevice, BluetoothPeripheralArrayPosition]()

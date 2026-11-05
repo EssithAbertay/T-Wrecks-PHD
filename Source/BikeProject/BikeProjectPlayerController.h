@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "BikeBluetoothConnections.h"
+
 
 #include "BikeProjectPlayerController.generated.h"
 
@@ -132,4 +134,10 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 		void SetMoveEnum(EPlayerMove NewState, float DeltaTime);
 	UFUNCTION(BlueprintCallable)
 		EPlayerMove GetMoveEnum() const;
+
+
+	// controller stuff
+
+	UFUNCTION()
+	void HandleInputPressed(EBluetoothInputs Input);
 };

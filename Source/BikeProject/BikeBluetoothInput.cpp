@@ -241,8 +241,13 @@ void BikeBluetoothInput::RequestScanStop()
 	RequestedScanStop = true;
 }
 
-void BikeBluetoothInput::RequestResistanceChange(int NewResistance)
+void BikeBluetoothInput::RequestGearChange(int NewGear)
 {
+	NewResistance = (MaximumResistnace / GameInstanceRef->GetMaxGear()) * NewGear;
+	int IncrementFix = NewResistance % ResistanceIncrement;
+	NewResistance -= IncrementFix;
+
+	RequestedGearChange = true;
 }
 
 void BikeBluetoothInput::HandleFTMSSetup()
@@ -250,11 +255,11 @@ void BikeBluetoothInput::HandleFTMSSetup()
 	// FTMS setup, we want to read the resistance max, increment, and current, and set up how it can be changed!
 
 	// we rewrite the FTMS UUID so much that it should really be stored as a variable 
-	std::string ServiceUUIDX ="00001826-0000-1000-8000-00805f9b34fb";
-	std::string CharacteristicUUIDX ="00002ad6-0000-1000-8000-00805f9b34fb";
+	std::string ServiceUUID ="00001826-0000-1000-8000-00805f9b34fb";
+	std::string CharacteristicUUID ="00002ad6-0000-1000-8000-00805f9b34fb";
 
 
-	SimpleBLE::ByteArray Data = ConnectedTrainer.read(ServiceUUIDX, CharacteristicUUIDX);
+	SimpleBLE::ByteArray Data = ConnectedTrainer.read(ServiceUUID, CharacteristicUUID);
 
 	if (Data.size() < 3)
 	{
@@ -286,6 +291,48 @@ void BikeBluetoothInput::HandleFTMSSetup()
 		MaximumResistnace,
 		ResistanceIncrement
 	);
+
+
+	ConnectedTrainer.indicate(
+		FTMSControlPointServiceUUID,
+		FTMSControlPointCharacteristicUUID,
+		[](SimpleBLE::ByteArray Data)
+		{
+			// add confimrations for different recieved codes
+
+			UE_LOG(LogTemp, Warning, TEXT("FTMS indication received"));
+
+			for (int i = 0; i < Data.size(); i++)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Byte %d: %02X"),
+					i, static_cast<uint8>(Data[i]));
+			}
+		}
+	);
+
+	// Request control of the fitness machine
+	SimpleBLE::ByteArray RequestControlData = { 0x00 };
+
+	ConnectedTrainer.write_request(
+		FTMSControlPointServiceUUID,
+		FTMSControlPointCharacteristicUUID,
+		RequestControlData
+	);
+}
+
+void BikeBluetoothInput::ChangeGear()
+{
+
+	int16 TargetResistance = NewResistance;
+
+	SimpleBLE::ByteArray Data =
+	{
+		0x04,
+		static_cast<uint8>(TargetResistance & 0xFF),
+		static_cast<uint8>((TargetResistance >> 8) & 0xFF)
+	};
+
+	ConnectedTrainer.write_request(FTMSControlPointServiceUUID,FTMSControlPointCharacteristicUUID,Data);
 }
 
 bool BikeBluetoothInput::Init()
@@ -496,6 +543,14 @@ uint32 BikeBluetoothInput::Run()
 					break;
 				}
 			}
+		 }
+
+
+		 if (RequestedGearChange)
+		 {
+			 RequestedGearChange = false;
+
+
 		 }
 
 		FPlatformProcess::Sleep(0.03F);

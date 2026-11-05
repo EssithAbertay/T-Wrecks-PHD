@@ -145,6 +145,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void MakeScanStartStopRequest(bool bStartScan); // true to request a scan start, false to request a scan stop
 
+
+	UFUNCTION(BlueprintCallable)
+	void MakeGearChangeRequest(bool bGearUp); // true to request a gear up, false to request a gear down
+
+	UFUNCTION(BlueprintCallable)
+	int GetCurrentGear() const;
+
+	UFUNCTION(BlueprintCallable)
+	int GetMaxGear() const;
+
+
 	UFUNCTION(BlueprintCallable)
 	void BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition);
 
@@ -230,4 +241,10 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)
 	int32 ControllerState;
+
+	UPROPERTY(BlueprintGetter = GetCurrentGear)
+	int CurrentGear;
+
+	UPROPERTY(BlueprintGetter = GetMaxGear)
+	int MaxGear = 12;
 };

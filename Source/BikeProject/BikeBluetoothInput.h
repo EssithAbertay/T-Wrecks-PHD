@@ -38,7 +38,7 @@ public:
 	void RequestScanStart();
 	void RequestScanStop();
 
-	void  RequestResistanceChange(int NewResistance);
+	void RequestGearChange(int NewGear);
 
 
 	// used in the thread
@@ -84,20 +84,27 @@ private:
 	uint32 PreviousControllerData;
 
 
-	float MinimumResistance = 0;
-	float MaximumResistnace = 0;
-	float ResistanceIncrement = 0;
-	float CurrentResistance = 0.0f;
+	int MinimumResistance = 0;
+	int MaximumResistnace = 0;
+	int ResistanceIncrement = 0;
+	int CurrentResistance = 0;
+	int NewResistance = 0;
 
 	FThreadSafeBool ResistanceSupported = false;
 	FThreadSafeBool ResistanceControlSupported = false;
-	FThreadSafeBool RequestedResistanceChange = false;
+	FThreadSafeBool RequestedGearChange = false;
+
+
+	const std::string FTMSControlPointServiceUUID = "00001826-0000-1000-8000-00805f9b34fb";
+	const std::string FTMSControlPointCharacteristicUUID = "00002ad9-0000-1000-8000-00805f9b34fb";
+
 
 
 	// internal functions
 
 	void HandleFTMSSetup();
 
+	void ChangeGear();
 
 // requirements for runnable
 public:
