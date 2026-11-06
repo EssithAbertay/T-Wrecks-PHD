@@ -43,6 +43,14 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 	UPROPERTY()
 	float PowerLevelAuto;
 
+
+	// bluetooth
+	UPROPERTY()
+	int CurrentGear = 1;
+
+
+
+
 	// Movement Checks
 	UPROPERTY(BlueprintGetter = GetMovePauseBlocked, BlueprintSetter = SetMovePauseBlocked)
 		bool MovePauseBlocked;
@@ -140,4 +148,9 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 
 	UFUNCTION()
 	void HandleInputPressed(EBluetoothInputs Input);
+
+	// other 
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetGear(int NewGear);
 };

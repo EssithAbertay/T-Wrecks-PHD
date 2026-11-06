@@ -350,12 +350,14 @@ void UBikeGameInstance::MakeScanStartStopRequest(bool bStartScan)
 
 void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
 {
+	// this could be better
 	if (bGearUp)
 	{
 		if (CurrentGear == MaxGear) // can't exceed max gear (12 by default)
 		{
 			return;
 		}
+		PreviousGear = CurrentGear;
 		CurrentGear++;
 		BluetoothTask->RequestGearChange(CurrentGear);
 	}
@@ -365,6 +367,7 @@ void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
 		{
 			return;
 		}
+		PreviousGear = CurrentGear;
 		CurrentGear--;
 		BluetoothTask->RequestGearChange(CurrentGear);
 	}
@@ -373,6 +376,11 @@ void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
 int UBikeGameInstance::GetCurrentGear() const
 {
 	return CurrentGear;
+}
+
+int UBikeGameInstance::GetPreviousGear() const
+{
+	return PreviousGear;
 }
 
 int UBikeGameInstance::GetMaxGear() const
