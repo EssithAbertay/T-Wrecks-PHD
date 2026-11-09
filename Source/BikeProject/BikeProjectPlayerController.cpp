@@ -82,7 +82,18 @@ void ABikeProjectPlayerController::Tick(float DeltaTime)
 			PowerLevelKB -= 0.5f * DeltaTime;
 			TempPower = PowerLevelKB;
 		}
-		else TempPower = PowerLevelBP;
+		else {
+			TempPower = PowerLevelBP;
+			if (IsBraking)
+			{
+				TempPower *= (1-BrakeModifier);
+			}
+			
+		
+		}
+
+		// TODO Store PowerLevelBP as the telemetry that's saved, use TempPower as the value used in gameplay!
+
 
 		PowerTransition(DeltaTime, TempPower);
 
@@ -182,9 +193,11 @@ void ABikeProjectPlayerController::PowerTransition(float DeltaTime, float NewPow
 		PowerAlpha = 0;
 	}
 
-	PowerAlpha += DeltaTime / 0.25f;
+	PowerAlpha += DeltaTime / PowerInterp;
 	PowerAlpha = FMath::Clamp(PowerAlpha, 0.f, 1.f);
 	PowerLevel = FMath::Lerp(PowerLevelCurrent, PowerLevelTarget, PowerAlpha);
+
+	//PowerLevel = NewPower;
 }
 
 bool ABikeProjectPlayerController::GetMovePauseBlocked() const
@@ -344,4 +357,15 @@ void ABikeProjectPlayerController::HandleInputPressed(EBluetoothInputs Input)
 void ABikeProjectPlayerController::SetGear_Implementation(int NewGear)
 {
 	CurrentGear = NewGear;
+}
+
+void ABikeProjectPlayerController::ChangePowerInterp(float Change)
+{
+	PowerInterp += Change;
+}
+
+
+float ABikeProjectPlayerController::GetPowerInterp()
+{
+	return PowerInterp;
 }

@@ -43,6 +43,11 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 	UPROPERTY()
 	float PowerLevelAuto;
 
+	// power level lerp control
+	UPROPERTY(EditAnywhere)
+	float PowerInterp = 0.7;
+
+
 
 	// bluetooth
 	UPROPERTY()
@@ -99,8 +104,16 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 	UPROPERTY(EditAnywhere)
 		float CurrencyMultDead;
 
+
+
+
+
+
 	public:
 	ABikeProjectPlayerController();
+
+
+
 
 	virtual void BeginPlay() override;
 
@@ -153,4 +166,19 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetGear(int NewGear);
+
+	UFUNCTION(BlueprintCallable)
+	void ChangePowerInterp(float Change);
+
+	UFUNCTION(BlueprintCallable)
+	float GetPowerInterp();
+
+
+	// brakes
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool IsBraking;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float BrakeModifier;
+
 };
