@@ -51,6 +51,9 @@ void ABikeProjectPlayerController::BeginPlay()
 		GameInstanceRef->BluetoothInputPressedSignal.AddDynamic(this,&ABikeProjectPlayerController::HandleInputPressed);
 	}
 
+
+	// should probs test this TODO: Make a default value variable
+	SetGear(3);
 }
 
 // Called every frame
@@ -287,11 +290,11 @@ void ABikeProjectPlayerController::HandleInputPressed(EBluetoothInputs Input)
 {
 	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
 
-
 	switch (Input)
 	{
 	case EBluetoothInputs::LFRONTSHIFT:
 		GameInstanceRef->MakeGearChangeRequest(false);
+		SetGear(GameInstanceRef->GetCurrentGear());
 		break;
 	case EBluetoothInputs::LBACKSHIFT:
 		break;
@@ -313,6 +316,7 @@ void ABikeProjectPlayerController::HandleInputPressed(EBluetoothInputs Input)
 		break;
 	case EBluetoothInputs::RFRONTSHIFT:
 		GameInstanceRef->MakeGearChangeRequest(true);
+		SetGear(GameInstanceRef->GetCurrentGear());
 		break;
 	case EBluetoothInputs::RBACKSHIFT:
 		break;
@@ -335,4 +339,9 @@ void ABikeProjectPlayerController::HandleInputPressed(EBluetoothInputs Input)
 	default:
 		break;
 	}
+}
+
+void ABikeProjectPlayerController::SetGear_Implementation(int NewGear)
+{
+	CurrentGear = NewGear;
 }

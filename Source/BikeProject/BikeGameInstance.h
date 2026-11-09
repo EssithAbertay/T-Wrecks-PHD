@@ -153,6 +153,10 @@ public:
 	int GetCurrentGear() const;
 
 	UFUNCTION(BlueprintCallable)
+	int GetPreviousGear() const;
+
+
+	UFUNCTION(BlueprintCallable)
 	int GetMaxGear() const;
 
 
@@ -244,6 +248,8 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetCurrentGear)
 	int CurrentGear;
+	UPROPERTY(BlueprintGetter = GetPreviousGear)
+	int PreviousGear;
 
 	UPROPERTY(BlueprintGetter = GetMaxGear)
 	int MaxGear = 12;

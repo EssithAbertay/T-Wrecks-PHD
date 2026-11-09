@@ -132,10 +132,13 @@ void BikeBluetoothInput::ReceiveControllerNotification(SimpleBLE::ByteArray payl
 		else if (wasPressed && pressed) // held this tick
 		{
 			// send held signal
+			GameInstanceRef->BroadcastBluetoothInput(EBluetoothInputEvent::HELD, EBluetoothInputs(Bit));
+
 		}
 		else if (wasPressed && !pressed) // let go this tick
 		{
 			// send released signal
+			GameInstanceRef->BroadcastBluetoothInput(EBluetoothInputEvent::RELEASED, EBluetoothInputs(Bit));
 		}
 		else // not pressed at all
 		{
@@ -286,10 +289,10 @@ void BikeBluetoothInput::HandleFTMSSetup()
 		(static_cast<uint16>(static_cast<uint8>(Data[5])) << 8);
 
 	UE_LOG(LogTemp, Warning,
-		TEXT("FTMS Resistance - Min: %.1f | Max: %.1f | Increment: %.1f"),
-		MinimumResistance,
-		MaximumResistnace,
-		ResistanceIncrement
+		TEXT("FTMS Resistance - Min: %d | Max: %d | Increment: %d"),
+		static_cast<int32>(MinimumResistance),
+		static_cast<int32>(MaximumResistnace),
+		static_cast<int32>(ResistanceIncrement)
 	);
 
 
@@ -322,8 +325,9 @@ void BikeBluetoothInput::HandleFTMSSetup()
 
 void BikeBluetoothInput::ChangeGear()
 {
-
 	int16 TargetResistance = NewResistance;
+
+	UE_LOG(LogTemp, Warning, TEXT("Setting Target Resistance: %d"), static_cast<int32>(TargetResistance));
 
 	SimpleBLE::ByteArray Data =
 	{
@@ -550,7 +554,7 @@ uint32 BikeBluetoothInput::Run()
 		 {
 			 RequestedGearChange = false;
 
-
+			 ChangeGear();
 		 }
 
 		FPlatformProcess::Sleep(0.03F);
