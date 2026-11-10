@@ -51,7 +51,7 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 
 	// bluetooth
 	UPROPERTY()
-	int CurrentGear = 1;
+	int CurrentGear = 3;
 
 
 
@@ -181,4 +181,6 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float BrakeModifier;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int NumberOfBrakesHeld;
 };

@@ -46,9 +46,9 @@ ABikeCharacter::ABikeCharacter()
 	//Take control of the default Player
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
-	// Default variables
-	UpperPercent = 0.7f;
-	MiddlePercent = 0.5f;
+	// Default variables, percents used to be 0.7, 0.5 
+	UpperPercent = 0.8f;
+	MiddlePercent = 0.4f;
 	LowerPercent = 0.3f;
 
 	BikeLanes = nullptr;
@@ -159,6 +159,8 @@ void ABikeCharacter::PostProcessTransition(float DeltaTime)
 void ABikeCharacter::MoveNewLane_Implementation(float DeltaTime)
 {
 	FVector NewHorizontalPos = GetActorLocation();
+
+	// moving to a lane
 	if (LaneSwitching || LaneBlocked)
 	{
 		switch (PowerLane)
@@ -176,11 +178,14 @@ void ABikeCharacter::MoveNewLane_Implementation(float DeltaTime)
 			break;
 		}
 	}
+
+	//checking if should be moving to a lane
 	else
 	{
 		// Checks if CURRENTPOWER is past the upper of the power scale
 		if (CURRENTPOWER > UPPERPOWER)
 		{
+			// move one lane at a time
 			if (PowerLane == 0)
 			{
 				NewHorizontalPos = BikeLanes->MoveCenter(true, DeltaTime, GetActorLocation());
@@ -188,7 +193,7 @@ void ABikeCharacter::MoveNewLane_Implementation(float DeltaTime)
 			}
 			else
 			{
-				if (PowerLane == 1) NewHorizontalPos = BikeLanes->MoveRight(true, DeltaTime);
+				if (PowerLane == 1) NewHorizontalPos = BikeLanes->MoveRight(true, DeltaTime); // only move right when there is space
 				PowerLane = 2;
 			}
 		}

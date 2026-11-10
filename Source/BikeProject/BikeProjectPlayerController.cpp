@@ -40,10 +40,7 @@ void ABikeProjectPlayerController::BeginPlay()
 	SetViewTarget(PawnInstanceRef);
 	PowerLevelMax = PawnInstanceRef->GetRawPower(3);
 
-
 	// setting up the ble input 
-
-
 	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
 
 	if (GameInstanceRef)
@@ -84,12 +81,55 @@ void ABikeProjectPlayerController::Tick(float DeltaTime)
 		}
 		else {
 			TempPower = PowerLevelBP;
+
+
 			if (IsBraking)
 			{
-				TempPower *= (1-BrakeModifier);
+				float BrakeToApply = 0;
+
+				// when a brake is held, we want to go down "1" lane, so need to work out the maths on that. So like if current power is 200 and then lane down starts at 100 - 150, we want to go to 125 (or somehwere in the middle idk)
+
+				int CurrLane = 0;
+
+				// we need to get the lane that the player "should be in" as otherwise the player will jump around like mad
+
+				if (PawnInstanceRef->GetRawPower(2) < PowerLevelBP) // if should be in lane 2
+				{
+					CurrLane = 2;
+				}
+				else if (PawnInstanceRef->GetRawPower(1) < PowerLevelBP) // if should be in lane 1
+				{
+					CurrLane = 1;
+				}
+
+				if (CurrLane == 2) // if in the third lane
+				{
+					if (NumberOfBrakesHeld == 2) // if holding both brakes
+					{
+						int TargetPower = (PawnInstanceRef->GetRawPower(0) + PawnInstanceRef->GetRawPower(1)) / 2; // returns middle power / 2, giving us halfway into left lane, WRONG,
+						BrakeToApply = PowerLevelBP - TargetPower;
+						UE_LOG(LogTemp, Warning, TEXT("2 BRAKES LANE 2"));
+					}
+					else
+					{
+						int TargetPower = (PawnInstanceRef->GetRawPower(1) + PawnInstanceRef->GetRawPower(2)) / 2; // returns upper power / 2, giving us halfway into left lane
+						BrakeToApply = PowerLevelBP - TargetPower;
+						UE_LOG(LogTemp, Warning, TEXT("1 BRAKES LANE 2"));
+					}
+				}
+				else if (CurrLane == 1) // if in the middle lane
+				{
+					int TargetPower = (PawnInstanceRef->GetRawPower(0) + PawnInstanceRef->GetRawPower(1)) / 2; // returns middle power / 2, giving us halfway into left lane
+					BrakeToApply = PowerLevelBP - TargetPower;
+					UE_LOG(LogTemp, Warning, TEXT("any BRAKES LANE 1"));
+				}
+				else// when in the left/first lane, we cant go down any lanes, so just apply a flat reduction?
+				{
+					UE_LOG(LogTemp, Warning, TEXT("any BRAKES LANE 0"));
+				}
+
+				TempPower -= BrakeToApply;
 			}
-			
-		
 		}
 
 		// TODO Store PowerLevelBP as the telemetry that's saved, use TempPower as the value used in gameplay!
