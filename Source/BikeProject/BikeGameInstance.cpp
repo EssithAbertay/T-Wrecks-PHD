@@ -10,6 +10,10 @@
 
 void UBikeGameInstance::Init()
 {
+	Super::Init();
+
+	UE_LOG(LogTemp, Warning, TEXT("Game Instance Init"));
+
 	Circumference = 2100;
 	PhysicalSpeed = -1.f;
 	MobileSpeed = -1.f;
@@ -21,22 +25,24 @@ void UBikeGameInstance::Init()
 	MobileTask = nullptr;
 	PhysicalTask = nullptr;
 
-	// Only load game stats if the load .sav file exists
-	const FString SaveSlotName = FString(TEXT("PlayerSaveSlot"));
 
-	// Checks for save data, if it exists then it loads the maximum power in the save and sets tutorial state to false (player has already done tutorial)
-	if (UGameplayStatics::DoesSaveGameExist(SaveSlotName, 0))
-	{
-		class UBikeProjectSaveGame* LoadInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::CreateSaveGameObject(UBikeProjectSaveGame::StaticClass()));
-		LoadInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadInstance->SaveSlotName, LoadInstance->UserIndex));
-		PlayerStats = LoadInstance->SaveStats;
-		TutorialState = false;
-	}
-	// Else set tutorial state to true
-	else
-	{
-		TutorialState = true;
-	}
+	// deprecated saving logic, now handled in subsystem
+	//// Only load game stats if the load .sav file exists
+	//const FString SaveSlotName = FString(TEXT("PlayerSaveSlot"));
+
+	//// Checks for save data, if it exists then it loads the maximum power in the save and sets tutorial state to false (player has already done tutorial)
+	//if (UGameplayStatics::DoesSaveGameExist(SaveSlotName, 0))
+	//{
+	//	class UBikeProjectSaveGame* LoadInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::CreateSaveGameObject(UBikeProjectSaveGame::StaticClass()));
+	//	LoadInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadInstance->SaveSlotName, LoadInstance->UserIndex));
+	//	PlayerStats = LoadInstance->SaveStats;
+	//	TutorialState = false;
+	//}
+	//// Else set tutorial state to true
+	//else
+	//{
+	//	TutorialState = true;
+	//}
 
 
 }
@@ -99,21 +105,24 @@ FPlayerStats UBikeGameInstance::GetPlayerStats() const
 	return PlayerStats;
 }
 
-void UBikeGameInstance::SavePlayerStats()
-{
-	if (UBikeProjectSaveGame* SaveGameInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::CreateSaveGameObject(UBikeProjectSaveGame::StaticClass())))
-	{
-		// Set data on the savegame object.
-		SaveGameInstance->SaveStats = PlayerStats;
 
-		// Save the data immediately.
-		if (UGameplayStatics::SaveGameToSlot(SaveGameInstance, SaveGameInstance->SaveSlotName, SaveGameInstance->UserIndex))
-		{
-			// Save succeeded.
-			TutorialState = false;
-		}
-	}
-}
+// this gets replaced with saving in the subsystem
+
+//void UBikeGameInstance::SavePlayerStats()
+//{
+//	if (UBikeProjectSaveGame* SaveGameInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::CreateSaveGameObject(UBikeProjectSaveGame::StaticClass())))
+//	{
+//		// Set data on the savegame object.
+//		SaveGameInstance->SaveStats = PlayerStats;
+//
+//		// Save the data immediately.
+//		if (UGameplayStatics::SaveGameToSlot(SaveGameInstance, SaveGameInstance->SaveSlotName, SaveGameInstance->UserIndex))
+//		{
+//			// Save succeeded.
+//			TutorialState = false;
+//		}
+//	}
+//}
 
 void UBikeGameInstance::SetMaxPower(float newMaxPower)
 {

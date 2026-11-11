@@ -48,8 +48,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FPlayerStats GetPlayerStats() const;
-	UFUNCTION(BlueprintCallable)
-	void SavePlayerStats();
+	//UFUNCTION(BlueprintCallable)
+	//void SavePlayerStats();
 	UFUNCTION(BlueprintCallable)
 	void SetMaxPower(float newMaxPower);
 	UFUNCTION(BlueprintCallable)

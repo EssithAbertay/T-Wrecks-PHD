@@ -10,6 +10,22 @@
 /**
  * 
  */
+
+USTRUCT(BlueprintType)
+struct FUserAccount
+{
+    GENERATED_BODY()
+
+public:
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+    FString PlayerName;
+    
+    UPROPERTY(VisibleAnywhere, Category = Basic)
+    FString SaveSlotName;
+};
+
+
 UCLASS()
 class BIKEPROJECT_API UBikeProjectSaveGame : public USaveGame
 {
@@ -18,16 +34,7 @@ class BIKEPROJECT_API UBikeProjectSaveGame : public USaveGame
 public:
 
     UPROPERTY(VisibleAnywhere, Category = Basic)
-        FString PlayerName;
-
-    UPROPERTY(VisibleAnywhere, Category = Basic)
-        FPlayerStats SaveStats;
-
-    UPROPERTY(VisibleAnywhere, Category = Basic)
-        FString SaveSlotName;
-
-    UPROPERTY(VisibleAnywhere, Category = Basic)
-        uint32 UserIndex;
+    TArray<FUserAccount> UserAccounts;
 
     UBikeProjectSaveGame();
 };

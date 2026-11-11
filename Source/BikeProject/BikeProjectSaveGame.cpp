@@ -5,6 +5,4 @@
 
 UBikeProjectSaveGame::UBikeProjectSaveGame()
 {
-	SaveSlotName = TEXT("PlayerSaveSlot");
-	UserIndex = 0;
 }

@@ -4,6 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+
+#include "Kismet/GameplayStatics.h"
+
+#include "BikeProjectSaveGame.h"
+#include "BikePlayerSave.h"
+
 #include "BikeLoginInstanceSubsystem.generated.h"
 
 /**
@@ -19,6 +28,45 @@ public:
 	virtual void Deinitialize() override;
 	// End USubsystem
 
+
+	UFUNCTION(BlueprintCallable)
+	bool CreateUser();
+
+
+	UFUNCTION(BlueprintCallable)
+	FString CreateUsername();
+
+	UFUNCTION(BlueprintCallable)
+	void SaveAccounts();
+
+	UFUNCTION(BlueprintCallable)
+	bool LoginUser(const FString& Username);
+
+	UFUNCTION(BlueprintCallable)
+	void SaveUser();
 private:
+
+	bool IsLoggedIn = false;
+
+
+	FString RandomAdjective();
+	FString RandomDinosaur();
+
+	bool LoadAdjectives();
+	bool LoadDinosaurs();
+
+	void LoadAccounts();
+
+	UPROPERTY()
+	UBikeProjectSaveGame* AccountDatabase;
+
+	UPROPERTY()
+	UBikePlayerSave* CurrentPlayerSave;
+
+	UPROPERTY()
+	FUserAccount CurrentPlayerAccount;
+
 	// All my variables
+	TArray<FString> Adjectives;
+	TArray<FString> Dinosaurs;
 };
