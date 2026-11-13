@@ -17,12 +17,19 @@ struct FUserAccount
     GENERATED_BODY()
 
 public:
-
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FString PlayerName;
     
     UPROPERTY(VisibleAnywhere, Category = Basic)
     FString SaveSlotName;
+
+    // any data we need easy access to (for leaderboards etc, store here as well)
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    int HighScore = 0;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    FColor UserColor = FColor::White;
 };
 
 

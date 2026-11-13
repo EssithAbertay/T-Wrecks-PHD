@@ -18,7 +18,7 @@ class BIKEPROJECT_API UBikePlayerSave : public USaveGame
 public:
 
     UPROPERTY(VisibleAnywhere, Category = Basic)
-       FPlayerStats SaveStats;
+    FPlayerStats SaveStats;
 
     UBikePlayerSave();
 };
