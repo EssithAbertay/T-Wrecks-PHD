@@ -10,6 +10,8 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#include "BikeGameInstance.h"
+
 #include "BikeProjectSaveGame.h"
 #include "BikePlayerSave.h"
 
@@ -30,11 +32,11 @@ public:
 
 
 	UFUNCTION(BlueprintCallable)
-	bool CreateUser();
+	bool CreateUser(const FString& Username);
 
 
 	UFUNCTION(BlueprintCallable)
-	FString CreateUsername();
+	FString CreateUniqueUsername();
 
 	UFUNCTION(BlueprintCallable)
 	void SaveAccounts();
@@ -44,8 +46,25 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SaveUser();
-private:
 
+	UFUNCTION(BlueprintCallable)
+	void SetUserStats();
+
+	// returns an uneditable reference to the accounts
+	UFUNCTION(BlueprintCallable)
+	const TArray<FUserAccount>& GetAllAccounts() const;
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetAllAccountNames();
+
+	UFUNCTION(BlueprintCallable)
+	FString GetCurrentPlayerName();
+
+	// returns uneditable reference to top 10 accounts (by score)
+	UFUNCTION(BlueprintCallable)
+	const TArray<FUserAccount> GetTopTenAccounts() const;
+
+private:
 	bool IsLoggedIn = false;
 
 
@@ -56,6 +75,8 @@ private:
 	bool LoadDinosaurs();
 
 	void LoadAccounts();
+
+	bool CheckForExistingAccountByUsername(const FString& Username);
 
 	UPROPERTY()
 	UBikeProjectSaveGame* AccountDatabase;
