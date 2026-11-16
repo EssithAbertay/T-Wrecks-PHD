@@ -44,7 +44,7 @@ public:
 	// used in the thread
 	void ReceivePowerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
 	void ReceiveControllerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
-
+	void ReceieveHeartRateNotification(SimpleBLE::ByteArray payload); // receive notification callback func
 
 	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect);
 
@@ -66,7 +66,8 @@ private:
 
 	EBluetoothConnectionState FrameConnectionState = EBluetoothConnectionState::UNCONNECTED;
 	EBluetoothConnectionState TrainerConnectionState = EBluetoothConnectionState::UNCONNECTED;
-	
+	EBluetoothConnectionState HRConnectionState = EBluetoothConnectionState::UNCONNECTED;
+
 
 	FThreadSafeBool RequestedScanStart = false;
 	FThreadSafeBool RequestedScanStop = false;
@@ -98,6 +99,8 @@ private:
 	const std::string FTMSControlPointServiceUUID = "00001826-0000-1000-8000-00805f9b34fb";
 	const std::string FTMSControlPointCharacteristicUUID = "00002ad9-0000-1000-8000-00805f9b34fb";
 
+	const std::string HeartRateServiceUUID = "0000180d-0000-1000-8000-00805f9b34fb";
+	const std::string HeartRateCharacteristicUUID = "00002a37-0000-1000-8000-00805f9b34fb";
 
 
 	// internal functions

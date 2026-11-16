@@ -397,6 +397,16 @@ int UBikeGameInstance::GetMaxGear() const
 	return MaxGear;
 }
 
+int UBikeGameInstance::GetHeartRate() const
+{
+	return HeartRate;
+}
+
+void UBikeGameInstance::SetHeartRate(int NewHeartRate)
+{
+	HeartRate = NewHeartRate;
+}
+
 void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothConnectionDevice, BluetoothPeripheralArrayPosition]()

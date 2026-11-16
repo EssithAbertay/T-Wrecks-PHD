@@ -112,7 +112,6 @@ void BikeBluetoothInput::ReceiveControllerNotification(SimpleBLE::ByteArray payl
 		(static_cast<uint32>(payload[5]) << 8) |
 		(static_cast<uint32>(payload[6]));
 
-
 	// processing the data, if it was
 	// Check all 32 bits, when checking we 
 
@@ -147,6 +146,18 @@ void BikeBluetoothInput::ReceiveControllerNotification(SimpleBLE::ByteArray payl
 	}
 
 	GameInstanceRef->SetControllerState(ControllerData);
+}
+
+void BikeBluetoothInput::ReceieveHeartRateNotification(SimpleBLE::ByteArray payload)
+{
+	if (payload.size() < 2)
+		return;
+
+	int HeartRate = payload[1];
+
+	GameInstanceRef->SetHeartRate(HeartRate);
+
+	UE_LOG(LogTemp, Warning, TEXT("Heart Rate: %d BPM"), HeartRate);
 }
 
 bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralToConnect)
@@ -392,7 +403,9 @@ bool BikeBluetoothInput::Init()
 					*ServiceUUID
 				);
 			}
+			
 
+			// TODO: adjust to check by manufacturer data!
 			// check what type of device it is before connection, trainer or frame, trainer will have the bike power service, frame will have the custom controller service
 			for ( SimpleBLE::Service& service : peripheral.services())
 			{
@@ -401,6 +414,11 @@ bool BikeBluetoothInput::Init()
 				if (ServiceUUID.Equals("00001818-0000-1000-8000-00805f9b34fb"))
 				{
 					DeviceType = EBluetoothConnectionDevice::TRAINER;
+					break;
+				}
+				else if (DeviceID.Contains(TEXT("TICKR FIT"))) // this is super greedy, and very bad, will not work with other devices, TODO: UPDATE SOMEHOW PLEASE
+				{
+					DeviceType = EBluetoothConnectionDevice::HEARTRATE;
 					break;
 				}
 				else // this will grab all devices that don't have bike power service, as the controller schema service is not adevertised, if you only want the Sqaure check if DeviceID == "SQUARE"
@@ -495,6 +513,21 @@ uint32 BikeBluetoothInput::Run()
 				Callback = [this](SimpleBLE::ByteArray Payload)
 				{
 					ReceivePowerNotification(Payload);
+				};
+				break;
+			case EBluetoothConnectionDevice::HEARTRATE:
+				UE_LOG(LogTemp, Warning, TEXT("connection to HR Sensor!"));
+
+				PeripheralToConnect = &ConnectedTrainer;
+				TrainerConnectionState = EBluetoothConnectionState::CONNECTING;
+
+				// these are the PMS (power service) UUIDs, used as a fallback if FTMS is not present
+				ServiceUUID = HeartRateServiceUUID;
+				CharacteristicUUID = HeartRateCharacteristicUUID;
+
+				Callback = [this](SimpleBLE::ByteArray Payload)
+				{
+					ReceieveHeartRateNotification(Payload);
 				};
 				break;
 			default:

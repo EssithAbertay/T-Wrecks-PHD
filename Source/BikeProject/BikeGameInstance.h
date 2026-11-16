@@ -159,6 +159,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int GetMaxGear() const;
 
+	// heartrate
+
+	UFUNCTION(BlueprintCallable)
+	int GetHeartRate() const;
+
+	// don't see why this is needed in bp
+	void SetHeartRate(int NewHeartRate);
 
 	UFUNCTION(BlueprintCallable)
 	void BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition);
@@ -240,8 +247,12 @@ private:
 	UPROPERTY(BlueprintSetter = SetDesiredConnection)
 	int desiredConnection = -1;
 
+	// power
+
 	UPROPERTY(BlueprintGetter = GetBluetoothPower, BlueprintSetter = SetBluetoothPower)
 	float BluetoothPower;
+
+	// controller
 
 	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)
 	int32 ControllerState;
@@ -253,4 +264,10 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetMaxGear)
 	int MaxGear = 12;
+
+	// heartrate
+
+	UPROPERTY(BlueprintGetter = GetHeartRate)
+	int HeartRate;
+
 };
