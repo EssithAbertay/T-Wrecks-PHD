@@ -207,6 +207,31 @@ const TArray<FUserAccount> UBikeLoginInstanceSubsystem::GetTopTenAccounts() cons
     return TopTenArray;
 }
 
+const FUserAccount UBikeLoginInstanceSubsystem::GetAccountByRank(int Rank) const
+{
+    // ADD ERROR PREVENTION for out of bounds access
+    if (Rank - 1 >= AccountDatabase->UserAccounts.Num())
+    {
+        FUserAccount Error;
+        Error.PlayerName = "Error";
+
+        return Error;
+    }
+
+    // -1 to account for 0
+    return AccountDatabase->UserAccounts[Rank-1];
+}
+
+void UBikeLoginInstanceSubsystem::SortAccounts()
+{
+    AccountDatabase->UserAccounts.Sort([](const FUserAccount& acc1, const FUserAccount& acc2) {return  acc1.HighScore > acc2.HighScore;});
+
+    for (int i = 0; i < AccountDatabase->UserAccounts.Num(); i++)
+    {
+        AccountDatabase->UserAccounts[i].CurrentRank = i + 1; // +1 to account for 0
+    }
+}
+
 FString UBikeLoginInstanceSubsystem::RandomAdjective()
 {
     if (Adjectives.Num() == 0)

@@ -64,6 +64,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	const TArray<FUserAccount> GetTopTenAccounts() const;
 
+	// const, make sure youve sorted the array before using this, as this function will not. Give actual place looking for, this function will -1 to account for array
+	UFUNCTION(BlueprintCallable)
+	const FUserAccount GetAccountByRank(int Rank) const;
+
+	UFUNCTION(BlueprintCallable)
+	void SortAccounts();
 private:
 	bool IsLoggedIn = false;
 

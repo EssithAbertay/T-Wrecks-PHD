@@ -29,6 +29,12 @@ public:
     int HighScore = 0;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    int CurrentRank = 0;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    int TotalEnergy = 0;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
     FColor UserColor = FColor::White;
 };
 
