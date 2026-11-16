@@ -7,7 +7,8 @@ UENUM(BlueprintType)
 enum class EBluetoothConnectionDevice : uint8
 {
 	FRAME UMETA(DisplayName = "Square Frame"),
-	TRAINER UMETA(DisplayName = "Trainer")
+	TRAINER UMETA(DisplayName = "Trainer"),
+	HEARTRATE UMETA(DisplayName = "HeartRate Sensor")
 };
 
 UENUM(BlueprintType)
