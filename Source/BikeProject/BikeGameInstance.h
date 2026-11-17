@@ -15,7 +15,7 @@
 
 #include "BikeGameInstance.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceID, EBluetoothConnectionDevice, BluetoothConnectionDevice, int, BluetoothPeripheralArrayPosition);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FBluetoothDeviceScanned, FString, BluetoothDeviceID, EBluetoothConnectionDevice, BluetoothConnectionDevice, FString, DeviceAddress);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputPressed, EBluetoothInputs, Input);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputReleased, EBluetoothInputs, Input);
@@ -140,7 +140,7 @@ public:
 	void SetBluetoothPower(float BTPower);
 
 	UFUNCTION(BlueprintCallable)
-	void MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, int BluetoothPeripheralArrayPosition);
+	void MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, const FString& BluetoothDeviceAddress);
 
 	UFUNCTION(BlueprintCallable)
 	void MakeScanStartStopRequest(bool bStartScan); // true to request a scan start, false to request a scan stop
@@ -168,7 +168,7 @@ public:
 	void SetHeartRate(int NewHeartRate);
 
 	UFUNCTION(BlueprintCallable)
-	void BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition);
+	void BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, FString BluetoothDeviceAddress);
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetControllerState() const;
@@ -198,13 +198,28 @@ public:
 	void BroadcastBluetoothInput(EBluetoothInputEvent InputEvent ,EBluetoothInputs input);
 
 	UFUNCTION(BlueprintCallable)
-	EBluetoothConnectionState GetFrameConnectionState();
+	EBluetoothConnectionState GetFrameConnectionState() const;
 
 	UFUNCTION(BlueprintCallable)
-	EBluetoothConnectionState GetTrainerConnectionState();
+	EBluetoothConnectionState GetTrainerConnectionState() const;
 
 	UFUNCTION(BlueprintCallable)
-	bool GetBothDevicesConnected(); // returns true if both trainer and frame have been connected
+	EBluetoothConnectionState GetHRConnectionState();
+
+
+
+	UFUNCTION(BlueprintCallable)
+	bool GetAllDevicesConnected() const; // returns true if both trainer and frame have been connected
+
+	UFUNCTION(BlueprintCallable)
+	FString GetConnectedFrameName() const; // returns frame name if connected otherwise N/A
+
+	UFUNCTION(BlueprintCallable)
+	FString GetConnectedTrainerName() const; // returns trainer name if connected otherwise N/A
+
+	UFUNCTION(BlueprintCallable)
+	FString GetConnectedHRMonitorName() const; // returns hr monitor name if connected otherwise N/A
+
 
 private:
 	TArray<unsigned short> EventTimes;

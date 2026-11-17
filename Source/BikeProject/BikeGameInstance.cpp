@@ -334,11 +334,11 @@ void UBikeGameInstance::SetBluetoothPower(float BTPower)
 	BluetoothPower = BTPower;
 }
 
-void UBikeGameInstance::MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, int BluetoothPeripheralArrayPosition)
+void UBikeGameInstance::MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, const FString& BluetoothDeviceAddress)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Connection Request %s | Device Type %d | Array Position %d"), *RequestedConnectionAddress, static_cast<int32>(DeviceToConnect), BluetoothPeripheralArrayPosition)
+	UE_LOG(LogTemp, Warning, TEXT("Connection Request %s | Device Type %d | Address %s"), *RequestedConnectionAddress, static_cast<int32>(DeviceToConnect), *BluetoothDeviceAddress)
 
-	BluetoothTask->RequestConnection(RequestedConnectionAddress, DeviceToConnect, BluetoothPeripheralArrayPosition);
+	BluetoothTask->RequestConnection(RequestedConnectionAddress, DeviceToConnect, BluetoothDeviceAddress);
 }
 
 void UBikeGameInstance::MakeScanStartStopRequest(bool bStartScan)
@@ -407,11 +407,11 @@ void UBikeGameInstance::SetHeartRate(int NewHeartRate)
 	HeartRate = NewHeartRate;
 }
 
-void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, int BluetoothPeripheralArrayPosition)
+void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, FString BluetoothDeviceAddress)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothConnectionDevice, BluetoothPeripheralArrayPosition]()
+	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothConnectionDevice, BluetoothDeviceAddress]()
 	{
-			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothConnectionDevice, BluetoothPeripheralArrayPosition);
+			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothConnectionDevice, BluetoothDeviceAddress);
 	});
 }
 
@@ -454,17 +454,37 @@ void UBikeGameInstance::BroadcastBluetoothInput(EBluetoothInputEvent InputEvent,
 		});
 }
 
-EBluetoothConnectionState UBikeGameInstance::GetFrameConnectionState()
+EBluetoothConnectionState UBikeGameInstance::GetFrameConnectionState() const
 {
 	return BluetoothTask->GetFrameConnectionState();
 }
 
-EBluetoothConnectionState UBikeGameInstance::GetTrainerConnectionState()
+EBluetoothConnectionState UBikeGameInstance::GetTrainerConnectionState() const
 {
 	return BluetoothTask->GetTrainerConnectionState();
 }
 
-bool UBikeGameInstance::GetBothDevicesConnected()
+EBluetoothConnectionState UBikeGameInstance::GetHRConnectionState()
 {
-	return (BluetoothTask->GetFrameConnectionState() == EBluetoothConnectionState::CONNECTED && BluetoothTask->GetTrainerConnectionState() == EBluetoothConnectionState::CONNECTED);
+	return BluetoothTask->GetHRConnectionState();
+}
+
+bool UBikeGameInstance::GetAllDevicesConnected() const
+{
+	return (BluetoothTask->GetFrameConnectionState() == EBluetoothConnectionState::CONNECTED && BluetoothTask->GetTrainerConnectionState() == EBluetoothConnectionState::CONNECTED && BluetoothTask->GetHRConnectionState() == EBluetoothConnectionState::CONNECTED);
+}
+
+FString UBikeGameInstance::GetConnectedFrameName() const
+{
+	return BluetoothTask->GetConnectedFrameName();
+}
+
+FString UBikeGameInstance::GetConnectedTrainerName() const
+{
+	return BluetoothTask->GetConnectedTrainerName();
+}
+
+FString UBikeGameInstance::GetConnectedHRMonitorName() const
+{
+	return BluetoothTask->GetConnectedHRMonitorName();
 }

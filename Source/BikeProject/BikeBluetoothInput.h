@@ -18,9 +18,13 @@ class BIKEPROJECT_API BikeBluetoothInput : public FRunnable
 {
 	FRunnableThread* RunnableThread;
 	UBikeGameInstance* GameInstanceRef;
-	std::vector<SimpleBLE::Peripheral> peripherals;
+
+	std::unordered_map<std::string, SimpleBLE::Peripheral> PendingPeripherals;
+	std::unordered_map<std::string, SimpleBLE::Peripheral> ClassifiedPeripherals;
+
 	SimpleBLE::Peripheral ConnectedFrame;
 	SimpleBLE::Peripheral ConnectedTrainer;
+	SimpleBLE::Peripheral ConnectedHRMonitor;
 	SimpleBLE::Adapter Adapter;
 
 	FThreadSafeBool Connected = false;
@@ -30,7 +34,7 @@ class BIKEPROJECT_API BikeBluetoothInput : public FRunnable
 public:
 	BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef);
 	~BikeBluetoothInput();
-	void RequestConnection(const FString& RequestedConnectionAddress, EBluetoothConnectionDevice RequestedDevice, int PeripheralArrayPosition);
+	void RequestConnection(const FString& RequestedConnectionAddress, EBluetoothConnectionDevice RequestedDevice, const FString& DeviceAddress);
 
 	void HandleNotificationSetup(SimpleBLE::Peripheral* PeripheralToConnect, const std::string& RequestedConnectionServiceUUID, const  std::string& RequestedConnectionCharacteristicUUID, std::function<void(SimpleBLE::ByteArray)> Callback);
 
@@ -50,6 +54,13 @@ public:
 
 	EBluetoothConnectionState GetFrameConnectionState();
 	EBluetoothConnectionState GetTrainerConnectionState();
+	EBluetoothConnectionState GetHRConnectionState();
+	
+
+	FString GetConnectedFrameName();
+	FString GetConnectedTrainerName();
+	FString GetConnectedHRMonitorName();
+
 private:
 	FThreadSafeBool FirstRun = true;
 	FThreadSafeBool bRunThread = true;
@@ -57,9 +68,7 @@ private:
 	// requesting a connection
 	FString RequestedConnectionAddress;
 	EBluetoothConnectionDevice RequestedDevice;
-	int RequestedPeripheralArrayPosition;
-
-
+	FString RequestedDeviceAddress;
 
 	FThreadSafeBool ConnectionRequested = false;
 	FThreadSafeBool Connecting = false;
@@ -75,15 +84,8 @@ private:
 
 	FThreadSafeBool FTMSPresent = false;
 
-	double ScanTime = 15;
-	double ScanStartTime = 0;
-	bool ScanTimeOut = false;
-
-
-
 	uint32 ControllerData;
 	uint32 PreviousControllerData;
-
 
 	int MinimumResistance = 0;
 	int MaximumResistnace = 0;
@@ -96,14 +98,37 @@ private:
 	FThreadSafeBool RequestedGearChange = false;
 
 
+	// relevant services and characteristics that we use, im reusing the same ftms service woops
+
+	// FTMS, where we get the current power
+	const std::string FTMSServiceUUID = "00001826-0000-1000-8000-00805f9b34fb";
+	const std::string FTMSCharacteristicUUID = "00002ad2-0000-1000-8000-00805f9b34fb";
+	
+	//FTMS Resistance range , where we read the min max increment resistance of the trainer
+	const std::string FTMSResistanceRangeServiceUUID = "00001826-0000-1000-8000-00805f9b34fb";
+	const std::string FTMSResistanceCharacteristicUUID = "00002ad8-0000-1000-8000-00805f9b34fb";
+
+	//FTMS Control Point, where we write the gear changes and stuff too
 	const std::string FTMSControlPointServiceUUID = "00001826-0000-1000-8000-00805f9b34fb";
 	const std::string FTMSControlPointCharacteristicUUID = "00002ad9-0000-1000-8000-00805f9b34fb";
 
+	//The other bike power one, we sometimes read the bike power from here
+	const std::string PMSServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
+	const std::string PMSCharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
+
+	// The controller, get button inputs
+	const std::string ControllerServiceUUID = "347b0001-7635-408b-8918-8ff3949ce592";
+	const std::string ControllerCharacteristicUUID = "347b0043-7635-408b-8918-8ff3949ce592";
+
+
+	// Heartrate monitor, get the heartrate
 	const std::string HeartRateServiceUUID = "0000180d-0000-1000-8000-00805f9b34fb";
 	const std::string HeartRateCharacteristicUUID = "00002a37-0000-1000-8000-00805f9b34fb";
 
 
 	// internal functions
+	bool ClassifyPeripheral(SimpleBLE::Peripheral& Peripheral, EBluetoothConnectionDevice& OutDeviceType);
+
 
 	void HandleFTMSSetup();
 

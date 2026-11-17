@@ -101,7 +101,6 @@ void BikeBluetoothInput::ReceivePowerNotification(SimpleBLE::ByteArray payload)
 	GameInstanceRef->SetBluetoothPower(Power);
 }
 
-
 void BikeBluetoothInput::ReceiveControllerNotification(SimpleBLE::ByteArray payload)
 {	
 	PreviousControllerData = ControllerData;
@@ -157,21 +156,23 @@ void BikeBluetoothInput::ReceieveHeartRateNotification(SimpleBLE::ByteArray payl
 
 	GameInstanceRef->SetHeartRate(HeartRate);
 
-	UE_LOG(LogTemp, Warning, TEXT("Heart Rate: %d BPM"), HeartRate);
+	FString RawData;
+
+	for (uint8 Byte : payload)
+	{
+		RawData += FString::Printf(TEXT("%02X "), static_cast<uint8>(Byte));
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("HR Raw Data: %s"), *RawData);
 }
 
 bool BikeBluetoothInput::ConnectToPeripheral(SimpleBLE::Peripheral* PeripheralToConnect)
 {
-	int indexToConnect = RequestedPeripheralArrayPosition;
+	auto It = ClassifiedPeripherals.find(TCHAR_TO_UTF8(*RequestedDeviceAddress));
 
-	if (!(indexToConnect >= peripherals.size()))
+	if (It != ClassifiedPeripherals.end())
 	{
-		*PeripheralToConnect = peripherals[indexToConnect];
-	}
-	else 
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Peripheral Out Of Bounds!"));
-		return false;
+		*PeripheralToConnect = It->second;
 	}
 
 	FString DeviceID = UTF8_TO_TCHAR(PeripheralToConnect->identifier().c_str());
@@ -229,11 +230,46 @@ EBluetoothConnectionState BikeBluetoothInput::GetTrainerConnectionState()
 	return TrainerConnectionState;
 }
 
-void BikeBluetoothInput::RequestConnection(const FString& p_RequestedConnectionAddress, EBluetoothConnectionDevice p_RequestedDevice, int PeripheralArrayPosition)
+EBluetoothConnectionState BikeBluetoothInput::GetHRConnectionState()
+{
+	return HRConnectionState;
+}
+
+FString BikeBluetoothInput::GetConnectedFrameName()
+{
+	if (ConnectedFrame.initialized() && ConnectedFrame.is_connected())
+	{
+		return UTF8_TO_TCHAR(ConnectedFrame.identifier().c_str());
+	}
+
+	return TEXT("N/A");
+}
+
+FString BikeBluetoothInput::GetConnectedTrainerName()
+{
+	if (ConnectedTrainer.initialized() && ConnectedTrainer.is_connected())
+	{
+		return UTF8_TO_TCHAR(ConnectedTrainer.identifier().c_str());
+	}
+
+	return TEXT("N/A");
+}
+
+FString BikeBluetoothInput::GetConnectedHRMonitorName()
+{
+	if (ConnectedHRMonitor.initialized() && ConnectedHRMonitor.is_connected())
+	{
+		return UTF8_TO_TCHAR(ConnectedHRMonitor.identifier().c_str());
+	}
+
+	return TEXT("N/A");
+}
+
+void BikeBluetoothInput::RequestConnection(const FString& p_RequestedConnectionAddress, EBluetoothConnectionDevice p_RequestedDevice, const FString& p_DeviceAddress)
 {
 	 RequestedConnectionAddress = p_RequestedConnectionAddress;
 	 RequestedDevice = p_RequestedDevice;
-	 RequestedPeripheralArrayPosition = PeripheralArrayPosition;
+	 RequestedDeviceAddress = p_DeviceAddress;
 	 ConnectionRequested = true;
 
 	 UE_LOG(LogTemp, Warning, TEXT("Request Recieved, will attempt to connect to peripheral"));
@@ -269,6 +305,8 @@ void BikeBluetoothInput::HandleFTMSSetup()
 	// FTMS setup, we want to read the resistance max, increment, and current, and set up how it can be changed!
 
 	// we rewrite the FTMS UUID so much that it should really be stored as a variable 
+
+	// THESE ARE RESISTANCE UUIDS
 	std::string ServiceUUID ="00001826-0000-1000-8000-00805f9b34fb";
 	std::string CharacteristicUUID ="00002ad6-0000-1000-8000-00805f9b34fb";
 
@@ -350,6 +388,37 @@ void BikeBluetoothInput::ChangeGear()
 	ConnectedTrainer.write_request(FTMSControlPointServiceUUID,FTMSControlPointCharacteristicUUID,Data);
 }
 
+bool BikeBluetoothInput::ClassifyPeripheral(SimpleBLE::Peripheral& Peripheral, EBluetoothConnectionDevice& OutDeviceType)
+{
+	for (SimpleBLE::Service& service : Peripheral.services())
+	{
+		// get the UUID of each service
+		FString UUID = UTF8_TO_TCHAR(service.uuid().c_str());
+
+		// for the trainer we look for FTMS or PMS, PMS is a fallback though so would rather avoid, for the Frame/Controller we look for the custom controller service, and for the heartrate monitor we look for the heartrate service
+
+		if (UUID.Equals(PMSServiceUUID.c_str()) || UUID.Equals(FTMSServiceUUID.c_str()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Classified as Trainer!"));
+			OutDeviceType = EBluetoothConnectionDevice::TRAINER;
+			return true;
+		}
+		else if (UUID.Equals(ControllerServiceUUID.c_str()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Classified as Controller/Frame!"));
+			OutDeviceType = EBluetoothConnectionDevice::FRAME;
+			return true;
+		}
+		else if (UUID.Equals(HeartRateServiceUUID.c_str()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Classified as HR Monitor!"));
+			OutDeviceType = EBluetoothConnectionDevice::HEARTRATE;
+			return true;
+		}
+	}
+	return false;
+}
+
 bool BikeBluetoothInput::Init()
 {
 	UE_LOG(LogTemp, Warning, TEXT("INIT of bluetooth task thread"));
@@ -374,67 +443,71 @@ bool BikeBluetoothInput::Init()
 
 	Adapter.set_callback_on_scan_start([]() { UE_LOG(LogTemp, Warning, TEXT("Scan started.")); });
 	Adapter.set_callback_on_scan_stop([]() { UE_LOG(LogTemp, Warning, TEXT("Scan stopped.")); });
-	Adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral peripheral) 
+	
+	Adapter.set_callback_on_scan_found([&](SimpleBLE::Peripheral Peripheral) 
 	{
-		std::string id = peripheral.identifier();
-		std::string address = peripheral.address();
+		std::string id = Peripheral.identifier();
+		std::string address = Peripheral.address();
+
+		FString DeviceID = UTF8_TO_TCHAR(id.c_str());
+		FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
+		
+		if (Peripheral.is_connectable() && DeviceID != "") // if connectable and has an actual name, all our intended devices have IDs so can filter out others for sake of ease of use
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("SCAN FOUND Callback! Device: %s"),
+				*DeviceID
+			);
+
+			EBluetoothConnectionDevice DeviceType;
+
+			// check if we can classify this peripheral, if we can then do so, otherwise add it to the list to attempt to reclassify later
+			if (ClassifyPeripheral(Peripheral, DeviceType))
+			{
+				ClassifiedPeripherals.insert(std::make_pair(Peripheral.address(), Peripheral));
+
+				//inform game instance of the new device
+				GameInstanceRef->BroadcastNewDevice(DeviceID, DeviceType, DeviceAddress); // this needs changed to use address instead of array position as we dont use the vector anymore
+			}
+			else
+			{
+				PendingPeripherals.insert(std::make_pair(Peripheral.address().c_str(), Peripheral));
+			}
+
+		}
+	});
+
+	Adapter.set_callback_on_scan_updated([&](SimpleBLE::Peripheral Peripheral)
+	{
+		std::string id = Peripheral.identifier();
+		std::string address = Peripheral.address();
 
 		FString DeviceID = UTF8_TO_TCHAR(id.c_str());
 		FString DeviceAddress = UTF8_TO_TCHAR(address.c_str());
 
-		if (peripheral.is_connectable() && DeviceID != "") // if connectable and has an actual name, all our intended devices have IDs so can filter out others for sake of ease of use
+		auto PendingIt = PendingPeripherals.find(Peripheral.address());
+		if (PendingIt != PendingPeripherals.end()) // if connectable and has an actual name, all our intended devices have IDs so can filter out others for sake of ease of use
 		{
-			auto x = peripheral.services();
-			peripherals.push_back(peripheral);
-
-			// deprecated, remove when possible
-			GameInstanceRef->AddToDeviceArray(DeviceID, DeviceAddress);
-
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Updated Callback! Device: %s"),
+				*DeviceID
+			);
 
 			EBluetoothConnectionDevice DeviceType;
-			for (SimpleBLE::Service& service : peripheral.services())
+
+			// attempt to reclassify the peripheral
+			if (ClassifyPeripheral(Peripheral, DeviceType))
 			{
-				const FString ServiceUUID = UTF8_TO_TCHAR(service.uuid().c_str());
+				// if the peripheral could now be found, move it to the classified peripheral map and remove from pending
+				ClassifiedPeripherals.emplace(PendingIt->first, std::move(PendingIt->second));
+				PendingPeripherals.erase(PendingIt);
 
-				UE_LOG(
-					LogTemp,
-					Warning,
-					TEXT("Advertised Service: %s"),
-					*ServiceUUID
-				);
+				GameInstanceRef->BroadcastNewDevice(DeviceID, DeviceType, DeviceAddress);
 			}
-			
-
-			// TODO: adjust to check by manufacturer data!
-			// check what type of device it is before connection, trainer or frame, trainer will have the bike power service, frame will have the custom controller service
-			for ( SimpleBLE::Service& service : peripheral.services())
-			{
-				const FString ServiceUUID =UTF8_TO_TCHAR(service.uuid().c_str());
-				// bike power service
-				if (ServiceUUID.Equals("00001818-0000-1000-8000-00805f9b34fb"))
-				{
-					DeviceType = EBluetoothConnectionDevice::TRAINER;
-					break;
-				}
-				else if (DeviceID.Contains(TEXT("TICKR FIT"))) // this is super greedy, and very bad, will not work with other devices, TODO: UPDATE SOMEHOW PLEASE
-				{
-					DeviceType = EBluetoothConnectionDevice::HEARTRATE;
-					break;
-				}
-				else // this will grab all devices that don't have bike power service, as the controller schema service is not adevertised, if you only want the Sqaure check if DeviceID == "SQUARE"
-				{
-					DeviceType = EBluetoothConnectionDevice::FRAME;
-				}
-			}
-
-
-			// tell the game instance the devices name, what type it is, and where it is in the array, super ugly, but since we don't reorder it anywhere it's fine!!!
-			GameInstanceRef->BroadcastNewDevice(DeviceID, DeviceType, peripherals.size()-1);
-			
-			// debug message not really needed anymore
-			FString Msg = TEXT("Found device: ") + DeviceID + TEXT(" | Address: ") + DeviceAddress + TEXT("Counter: ") + FString::SanitizeFloat(counter) + TEXT(" PASSED: ") + FString::SanitizeFloat(peripherals.size() - 1);
-			counter++;
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
 		}
 	});
 
@@ -455,17 +528,9 @@ uint32 BikeBluetoothInput::Run()
 			 if (!Adapter.scan_is_active()) // start a scan if one isn't active
 			 {
 				 Adapter.scan_start(); 
-				 
-				 //ScanStartTime = FPlatformTime::Seconds();
-				 //ScanTimeOut = false;
 			 }
 		 }
-		 //if (FPlatformTime::Seconds() - ScanStartTime > ScanTime)
-			 //{
-				// ScanTimeOut = true;
-				// UE_LOG(LogTemp, Warning, TEXT("Scan timed out"));
 
-			 //}
 		 if (RequestedScanStop)
 		 {
 			 RequestedScanStop = false;
@@ -484,7 +549,6 @@ uint32 BikeBluetoothInput::Run()
 			std::string CharacteristicUUID;
 			std::function<void(SimpleBLE::ByteArray)> Callback;
 			
-			
 			switch (RequestedDevice)
 			{
 			case EBluetoothConnectionDevice::FRAME:
@@ -492,8 +556,8 @@ uint32 BikeBluetoothInput::Run()
 
 				PeripheralToConnect = &ConnectedFrame;
 				FrameConnectionState =  EBluetoothConnectionState::CONNECTING;
-				ServiceUUID = "347b0001-7635-408b-8918-8ff3949ce592";
-				CharacteristicUUID = "347b0043-7635-408b-8918-8ff3949ce592";
+				ServiceUUID = ControllerServiceUUID;
+				CharacteristicUUID = ControllerCharacteristicUUID;
 
 				Callback = [this](SimpleBLE::ByteArray Payload)
 				{
@@ -507,8 +571,8 @@ uint32 BikeBluetoothInput::Run()
 				TrainerConnectionState = EBluetoothConnectionState::CONNECTING;
 
 				// these are the PMS (power service) UUIDs, used as a fallback if FTMS is not present
-				ServiceUUID = "00001818-0000-1000-8000-00805f9b34fb";
-				CharacteristicUUID = "00002a63-0000-1000-8000-00805f9b34fb";
+				ServiceUUID = PMSServiceUUID;
+				CharacteristicUUID = PMSCharacteristicUUID;
 
 				Callback = [this](SimpleBLE::ByteArray Payload)
 				{
@@ -518,8 +582,8 @@ uint32 BikeBluetoothInput::Run()
 			case EBluetoothConnectionDevice::HEARTRATE:
 				UE_LOG(LogTemp, Warning, TEXT("connection to HR Sensor!"));
 
-				PeripheralToConnect = &ConnectedTrainer;
-				TrainerConnectionState = EBluetoothConnectionState::CONNECTING;
+				PeripheralToConnect = &ConnectedHRMonitor;
+				HRConnectionState = EBluetoothConnectionState::CONNECTING;
 
 				// these are the PMS (power service) UUIDs, used as a fallback if FTMS is not present
 				ServiceUUID = HeartRateServiceUUID;
@@ -576,6 +640,8 @@ uint32 BikeBluetoothInput::Run()
 				case EBluetoothConnectionDevice::TRAINER:
 					TrainerConnectionState = EBluetoothConnectionState::CONNECTED;
 					break;
+				case EBluetoothConnectionDevice::HEARTRATE:
+					HRConnectionState = EBluetoothConnectionState::CONNECTED;
 				default:
 					break;
 				}
@@ -615,6 +681,14 @@ void BikeBluetoothInput::Stop()
 		TrainerConnectionState = EBluetoothConnectionState::DISCONNECTED;
 		UE_LOG(LogTemp, Warning, TEXT("Trainer device disconnected"));
 	}
+
+	if (ConnectedHRMonitor.initialized() && ConnectedHRMonitor.is_connected())
+	{
+		ConnectedHRMonitor.disconnect();
+		HRConnectionState = EBluetoothConnectionState::DISCONNECTED;
+		UE_LOG(LogTemp, Warning, TEXT("Heartrate Monitor disconnected"));
+	}
+
 
 	UE_LOG(LogTemp, Warning, TEXT("Devices all disconnected"));
 

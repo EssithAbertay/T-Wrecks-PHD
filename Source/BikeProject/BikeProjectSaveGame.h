@@ -49,5 +49,8 @@ public:
     UPROPERTY(VisibleAnywhere, Category = Basic)
     TArray<FUserAccount> UserAccounts;
 
+    UPROPERTY(VisibleAnywhere, Category = Basic)
+    bool AutoconnectBluetooth = false;
+
     UBikeProjectSaveGame();
 };
