@@ -140,7 +140,7 @@ public:
 	void SetBluetoothPower(float BTPower);
 
 	UFUNCTION(BlueprintCallable)
-	void MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress, const FString& BluetoothDeviceAddress);
+	void MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress);
 
 	UFUNCTION(BlueprintCallable)
 	void MakeScanStartStopRequest(bool bStartScan); // true to request a scan start, false to request a scan stop
@@ -204,7 +204,7 @@ public:
 	EBluetoothConnectionState GetTrainerConnectionState() const;
 
 	UFUNCTION(BlueprintCallable)
-	EBluetoothConnectionState GetHRConnectionState();
+	EBluetoothConnectionState GetHRConnectionState() const;
 
 
 
@@ -219,6 +219,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FString GetConnectedHRMonitorName() const; // returns hr monitor name if connected otherwise N/A
+
+	UFUNCTION(BlueprintCallable)
+	FString GetConnectedFrameAddress() const; // returns frame Address if connected otherwise N/A
+
+	UFUNCTION(BlueprintCallable)
+	FString GetConnectedTrainerAddress() const; // returns trainer Address if connected otherwise N/A
+
+	UFUNCTION(BlueprintCallable)
+	FString GetConnectedHRMonitorAddress() const; // returns hr monitor Address if connected otherwise N/A
 
 
 private:

@@ -57,7 +57,6 @@ bool UBikeLoginInstanceSubsystem::CreateUser(const FString& Username)
     return true;
 }
 
-
 FString UBikeLoginInstanceSubsystem::CreateUniqueUsername()
 {
     FString name = RandomAdjective() + " " + RandomDinosaur();
@@ -230,6 +229,16 @@ void UBikeLoginInstanceSubsystem::SortAccounts()
     {
         AccountDatabase->UserAccounts[i].CurrentRank = i + 1; // +1 to account for 0
     }
+}
+
+void UBikeLoginInstanceSubsystem::SetDeviceReconnection(FDeviceReconnection Reconnection)
+{
+    AccountDatabase->DeviceReconnection = Reconnection;
+}
+
+FDeviceReconnection UBikeLoginInstanceSubsystem::GetDeviceReconnection() const
+{
+    return AccountDatabase->DeviceReconnection;
 }
 
 FString UBikeLoginInstanceSubsystem::RandomAdjective()

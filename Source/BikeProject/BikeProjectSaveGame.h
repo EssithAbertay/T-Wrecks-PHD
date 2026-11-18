@@ -12,6 +12,27 @@
  */
 
 USTRUCT(BlueprintType)
+struct FDeviceReconnection
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    bool AutoReconnectEnabled = false;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    FString FrameAddress = "FrameDefault";
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    FString TrainerAddress = "TrainerDefault";
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    FString HRMonitorAddress = "HRMonitorDefault";
+};
+
+
+
+USTRUCT(BlueprintType)
 struct FUserAccount
 {
     GENERATED_BODY()
@@ -45,12 +66,11 @@ class BIKEPROJECT_API UBikeProjectSaveGame : public USaveGame
 	GENERATED_BODY()
 	
 public:
-
     UPROPERTY(VisibleAnywhere, Category = Basic)
     TArray<FUserAccount> UserAccounts;
 
     UPROPERTY(VisibleAnywhere, Category = Basic)
-    bool AutoconnectBluetooth = false;
-
+    FDeviceReconnection DeviceReconnection;
+    
     UBikeProjectSaveGame();
 };

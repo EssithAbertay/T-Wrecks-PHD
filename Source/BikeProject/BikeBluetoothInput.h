@@ -5,12 +5,13 @@
 #include "CoreMinimal.h"
 #include "GenericPlatform/GenericPlatformProcess.h" 
 #include "HAL/Runnable.h"
-
+#include "Async/Async.h"
 #include <simpleble/Public/simpleble/SimpleBLE.h>
 
 #include "BikeBluetoothConnections.h"
 
 class BIKEPROJECT_API UBikeGameInstance;
+class BIKEPROJECT_API UBikeLoginInstanceSubsystem;
 /**
  * 
  */
@@ -18,6 +19,7 @@ class BIKEPROJECT_API BikeBluetoothInput : public FRunnable
 {
 	FRunnableThread* RunnableThread;
 	UBikeGameInstance* GameInstanceRef;
+	UBikeLoginInstanceSubsystem* LoginSubsystemRef;
 
 	std::unordered_map<std::string, SimpleBLE::Peripheral> PendingPeripherals;
 	std::unordered_map<std::string, SimpleBLE::Peripheral> ClassifiedPeripherals;
@@ -34,7 +36,7 @@ class BIKEPROJECT_API BikeBluetoothInput : public FRunnable
 public:
 	BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef);
 	~BikeBluetoothInput();
-	void RequestConnection(const FString& RequestedConnectionAddress, EBluetoothConnectionDevice RequestedDevice, const FString& DeviceAddress);
+	void RequestConnection(const FString& RequestedConnectionAddress, EBluetoothConnectionDevice RequestedDevice);
 
 	void HandleNotificationSetup(SimpleBLE::Peripheral* PeripheralToConnect, const std::string& RequestedConnectionServiceUUID, const  std::string& RequestedConnectionCharacteristicUUID, std::function<void(SimpleBLE::ByteArray)> Callback);
 
@@ -50,28 +52,31 @@ public:
 	void ReceiveControllerNotification(SimpleBLE::ByteArray payload); // receive notification callback func
 	void ReceieveHeartRateNotification(SimpleBLE::ByteArray payload); // receive notification callback func
 
-	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect);
+	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect, const FString& PeripheralAddress);
 
 	EBluetoothConnectionState GetFrameConnectionState();
 	EBluetoothConnectionState GetTrainerConnectionState();
 	EBluetoothConnectionState GetHRConnectionState();
 	
-
 	FString GetConnectedFrameName();
 	FString GetConnectedTrainerName();
 	FString GetConnectedHRMonitorName();
 
+	FString GetConnectedFrameAddress();
+	FString GetConnectedTrainerAddress();
+	FString GetConnectedHRMonitorAddress();
 private:
 	FThreadSafeBool FirstRun = true;
 	FThreadSafeBool bRunThread = true;
 
 	// requesting a connection
-	FString RequestedConnectionAddress;
-	EBluetoothConnectionDevice RequestedDevice;
-	FString RequestedDeviceAddress;
+	//FString RequestedConnectionAddress;
+	//EBluetoothConnectionDevice RequestedDevice;
 
-	FThreadSafeBool ConnectionRequested = false;
-	FThreadSafeBool Connecting = false;
+	TQueue<FBluetoothConnectionRequest, EQueueMode::Mpsc> ConnectionRequestQueue;
+
+	//FThreadSafeBool ConnectionRequested = false;
+	//FThreadSafeBool Connecting = false;
 
 	EBluetoothConnectionState FrameConnectionState = EBluetoothConnectionState::UNCONNECTED;
 	EBluetoothConnectionState TrainerConnectionState = EBluetoothConnectionState::UNCONNECTED;
@@ -129,6 +134,7 @@ private:
 	// internal functions
 	bool ClassifyPeripheral(SimpleBLE::Peripheral& Peripheral, EBluetoothConnectionDevice& OutDeviceType);
 
+	bool CheckReconnect(FString DeviceAddress, EBluetoothConnectionDevice& OutDeviceType);
 
 	void HandleFTMSSetup();
 

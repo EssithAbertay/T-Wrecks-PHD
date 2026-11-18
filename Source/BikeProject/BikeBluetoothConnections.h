@@ -78,3 +78,14 @@ struct FBluetoothDeviceStruct
 	FString Address;
 };
 
+USTRUCT(BlueprintType)
+struct FBluetoothConnectionRequest
+{
+	GENERATED_BODY()
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString Address;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		EBluetoothConnectionDevice DeviceType;
+};

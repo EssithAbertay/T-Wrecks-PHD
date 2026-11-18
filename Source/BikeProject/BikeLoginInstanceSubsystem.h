@@ -70,6 +70,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SortAccounts();
+
+	UFUNCTION(BLueprintCallable)
+	void SetDeviceReconnection(FDeviceReconnection Reconnection);
+
+	UFUNCTION(BLueprintCallable)
+	FDeviceReconnection GetDeviceReconnection() const; // will return the full struct
 private:
 	bool IsLoggedIn = false;
 
