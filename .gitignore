@@ -72,3 +72,8 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Keep SimpleBLE third-party binaries
+!Plugins/SimpleBLE/Binaries/
+!Plugins/SimpleBLE/Binaries/ThirdParty/
+!Plugins/SimpleBLE/Binaries/ThirdParty/**
