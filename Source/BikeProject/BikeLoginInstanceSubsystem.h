@@ -76,6 +76,10 @@ public:
 
 	UFUNCTION(BLueprintCallable)
 	FDeviceReconnection GetDeviceReconnection() const; // will return the full struct
+
+
+	UFUNCTION(BlueprintCallable)
+	bool GetCurrentPlayerTutorialState() const;
 private:
 	bool IsLoggedIn = false;
 

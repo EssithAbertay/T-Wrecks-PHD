@@ -241,6 +241,11 @@ FDeviceReconnection UBikeLoginInstanceSubsystem::GetDeviceReconnection() const
     return AccountDatabase->DeviceReconnection;
 }
 
+bool UBikeLoginInstanceSubsystem::GetCurrentPlayerTutorialState() const
+{
+    return CurrentPlayerSave->TutorialCompleted;
+}
+
 FString UBikeLoginInstanceSubsystem::RandomAdjective()
 {
     if (Adjectives.Num() == 0)

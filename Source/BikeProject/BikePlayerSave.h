@@ -20,5 +20,8 @@ public:
     UPROPERTY(VisibleAnywhere, Category = Basic)
     FPlayerStats SaveStats;
 
+    UPROPERTY(VisibleAnywhere, Category = Basic)
+    bool TutorialCompleted = false;
+
     UBikePlayerSave();
 };
