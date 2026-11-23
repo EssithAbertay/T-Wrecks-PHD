@@ -206,10 +206,20 @@ public:
 	UFUNCTION(BlueprintCallable)
 	EBluetoothConnectionState GetHRConnectionState() const;
 
-
+	UFUNCTION(BlueprintCallable)
+	bool GetBluetoothConnectionsProcessed() const; // returns true if bluetooth connections have been made, used for checking if we've already gone through the connections page
 
 	UFUNCTION(BlueprintCallable)
-	bool GetAllDevicesConnected() const; // returns true if both trainer and frame have been connected
+	void SetBluetoothConnectionsProcessed(bool Processed); // set true after connections processed, this isn't saved to file as must be done every time game is played
+
+	UFUNCTION(BlueprintCallable)
+	EMenuTransition GetNextMenuTransition() const; // returns what menu page to load in transistion
+
+	UFUNCTION(BlueprintCallable)
+	void SetNextMenuTransition(EMenuTransition MenuToLoad); // set what menu page to load on next transition
+
+	UFUNCTION(BlueprintCallable)
+	bool GetAllDevicesConnected() const; // returns true if trainer, frame, and hr monitor have been connected
 
 	UFUNCTION(BlueprintCallable)
 	FString GetConnectedFrameName() const; // returns frame name if connected otherwise N/A
@@ -270,6 +280,17 @@ private:
 
 	UPROPERTY(BlueprintSetter = SetDesiredConnection)
 	int desiredConnection = -1;
+
+
+	UPROPERTY(BlueprintSetter = SetBluetoothConnectionsProcessed, BlueprintGetter = GetBluetoothConnectionsProcessed)
+	bool BluetoothConnectionsProcessed = false;
+
+
+	UPROPERTY(BlueprintSetter = SetNextMenuTransition, BlueprintGetter = GetNextMenuTransition)
+	EMenuTransition NextMenuTransition = EMenuTransition::BLUETOOTHCONNECTION; // defaults to bluetooth connection
+
+
+
 
 	// power
 

@@ -79,7 +79,7 @@ public:
 
 
 	UFUNCTION(BlueprintCallable)
-	bool GetCurrentPlayerTutorialState() const;
+	bool GetCurrentPlayerTutorialState() const; // True for completed tutorial
 private:
 	bool IsLoggedIn = false;
 
