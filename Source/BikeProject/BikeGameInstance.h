@@ -48,7 +48,14 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FPlayerStats GetPlayerStats() const;
-	//UFUNCTION(BlueprintCallable)
+
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerStats(FPlayerStats Stats);
+
+
+
+
+	//UFUNCTION(BlueprintCallable) // replaced with subsystem
 	//void SavePlayerStats();
 	UFUNCTION(BlueprintCallable)
 	void SetMaxPower(float newMaxPower);
@@ -150,11 +157,14 @@ public:
 	void MakeGearChangeRequest(bool bGearUp); // true to request a gear up, false to request a gear down
 
 	UFUNCTION(BlueprintCallable)
+	void SetCurrentGear(int NewGear); // used for defaulting gear value
+
+
+	UFUNCTION(BlueprintCallable)
 	int GetCurrentGear() const;
 
 	UFUNCTION(BlueprintCallable)
 	int GetPreviousGear() const;
-
 
 	UFUNCTION(BlueprintCallable)
 	int GetMaxGear() const;
@@ -259,7 +269,7 @@ private:
 	UPROPERTY(BlueprintGetter = GetDeviceAddress)
 	FString DeviceAddress;
 
-	UPROPERTY(BlueprintGetter = GetPlayerStats)
+	UPROPERTY(BlueprintGetter = GetPlayerStats, BlueprintSetter = SetPlayerStats)
 	FPlayerStats PlayerStats;
 	UPROPERTY(BlueprintGetter = GetTutorialState)
 	bool TutorialState;
@@ -301,6 +311,8 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)
 	int32 ControllerState;
+
+	// Gears
 
 	UPROPERTY(BlueprintGetter = GetCurrentGear)
 	int CurrentGear;

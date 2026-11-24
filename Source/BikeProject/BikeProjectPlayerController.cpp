@@ -48,9 +48,9 @@ void ABikeProjectPlayerController::BeginPlay()
 		GameInstanceRef->BluetoothInputPressedSignal.AddDynamic(this,&ABikeProjectPlayerController::HandleInputPressed);
 	}
 
-
-	// should probs test this TODO: Make a default value variable
-	SetGear(3);
+	// set current gear to default
+	CurrentGear = DefaultGear;
+	GameInstanceRef->SetCurrentGear(CurrentGear);
 }
 
 // Called every frame
@@ -397,6 +397,11 @@ void ABikeProjectPlayerController::HandleInputPressed(EBluetoothInputs Input)
 void ABikeProjectPlayerController::SetGear_Implementation(int NewGear)
 {
 	CurrentGear = NewGear;
+}
+
+int ABikeProjectPlayerController::GetDefaultGear() const
+{
+	return DefaultGear;
 }
 
 void ABikeProjectPlayerController::ChangePowerInterp(float Change)

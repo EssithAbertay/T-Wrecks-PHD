@@ -118,7 +118,11 @@ bool UBikeLoginInstanceSubsystem::LoginUser(const FString& Username)
         // Save the newly created save file
         UGameplayStatics::SaveGameToSlot(CurrentPlayerSave,SelectedAccount->SaveSlotName,0);
     }
-
+    else
+    {
+        UBikeGameInstance* GameInstance = Cast<UBikeGameInstance>(GetGameInstance());
+        GameInstance->SetPlayerStats(CurrentPlayerSave->SaveStats);
+    }
     IsLoggedIn = true;
     CurrentPlayerAccount = *SelectedAccount;
     return true;
@@ -244,6 +248,11 @@ FDeviceReconnection UBikeLoginInstanceSubsystem::GetDeviceReconnection() const
 bool UBikeLoginInstanceSubsystem::GetCurrentPlayerTutorialState() const
 {
     return CurrentPlayerSave->TutorialCompleted;
+}
+
+void UBikeLoginInstanceSubsystem::SetCurrentPlayerTutorialState(bool NewState)
+{
+    CurrentPlayerSave->TutorialCompleted = NewState;
 }
 
 FString UBikeLoginInstanceSubsystem::RandomAdjective()

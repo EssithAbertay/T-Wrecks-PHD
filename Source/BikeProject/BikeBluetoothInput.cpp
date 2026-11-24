@@ -20,8 +20,6 @@ BikeBluetoothInput::BikeBluetoothInput(UBikeGameInstance* BikeInstanceRef)
 	bRunThread = true;
     UE_LOG(LogTemp, Warning, TEXT("Constructor of bluetooth task thread"));
     RunnableThread = FRunnableThread::Create(this, TEXT("Bluetooth Task"), 0, TPri_BelowNormal);
-
-	GameInstanceRef->SetMaxPower(160); // TEMP, JUST FOR TESTING!
 }
 
 BikeBluetoothInput::~BikeBluetoothInput()
@@ -293,7 +291,6 @@ FString BikeBluetoothInput::GetConnectedHRMonitorName()
 	
 	return TEXT("N/A");
 }
-
 
 FString BikeBluetoothInput::GetConnectedFrameAddress()
 {

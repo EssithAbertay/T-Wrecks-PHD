@@ -47,7 +47,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SaveUser();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable) // sets the stats used by the current save file, prepping for a save
 	void SetUserStats();
 
 	// returns an uneditable reference to the accounts
@@ -80,6 +80,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool GetCurrentPlayerTutorialState() const; // True for completed tutorial
+
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentPlayerTutorialState(bool NewState); // set if tutorial has been completed
 private:
 	bool IsLoggedIn = false;
 

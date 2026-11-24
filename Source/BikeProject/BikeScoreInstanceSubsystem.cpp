@@ -27,9 +27,11 @@ void UBikeScoreInstanceSubsystem::ResetScore()
 void UBikeScoreInstanceSubsystem::SetScore(int32 p_Score)
 {
 	CurrentScore = p_Score;
+	if (CurrentScore < 0)
+	{
+		CurrentScore = 0;
+	}
 }
-
-
 
 void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type, int32 ScoreIncrement)
 {
@@ -55,7 +57,6 @@ void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type, int32 ScoreI
 	default:
 		break;
 	}
-
 
 	SetScore(CurrentScore + Increment);
 	ScoreChangedSignal.Broadcast(CurrentScore, Increment);

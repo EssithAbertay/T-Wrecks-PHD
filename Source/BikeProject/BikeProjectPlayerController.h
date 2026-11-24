@@ -50,10 +50,11 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 
 
 	// bluetooth
+	// gear
 	UPROPERTY()
 	int CurrentGear = 3;
-
-
+	UPROPERTY()
+	int DefaultGear = 3;
 
 
 	// Movement Checks
@@ -166,6 +167,9 @@ class BIKEPROJECT_API ABikeProjectPlayerController : public APlayerController
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetGear(int NewGear);
+
+	UFUNCTION(BlueprintCallable)
+	int GetDefaultGear() const;
 
 	UFUNCTION(BlueprintCallable)
 	void ChangePowerInterp(float Change);

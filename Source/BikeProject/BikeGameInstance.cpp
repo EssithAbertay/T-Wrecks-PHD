@@ -105,9 +105,13 @@ FPlayerStats UBikeGameInstance::GetPlayerStats() const
 	return PlayerStats;
 }
 
+void UBikeGameInstance::SetPlayerStats(FPlayerStats Stats)
+{
+	PlayerStats = Stats;
+}
+
 
 // this gets replaced with saving in the subsystem
-
 //void UBikeGameInstance::SavePlayerStats()
 //{
 //	if (UBikeProjectSaveGame* SaveGameInstance = Cast<UBikeProjectSaveGame>(UGameplayStatics::CreateSaveGameObject(UBikeProjectSaveGame::StaticClass())))
@@ -124,14 +128,21 @@ FPlayerStats UBikeGameInstance::GetPlayerStats() const
 //	}
 //}
 
-void UBikeGameInstance::SetMaxPower(float newMaxPower)
+void UBikeGameInstance::SetMaxPower(float NewMaxPower)
 {
-	PlayerStats.PlayerMaxPower[GetConnectedState()] = newMaxPower;	
+	PlayerStats.PlayerMaxBluetoothPower = NewMaxPower;
+
+	// Deprecated
+	//PlayerStats.PlayerMaxPower[GetConnectedState()] = newMaxPower;	
 }
 
 float UBikeGameInstance::GetMaxPower() const
 {
-	return PlayerStats.PlayerMaxPower[GetConnectedState()];
+	return PlayerStats.PlayerMaxBluetoothPower;
+
+
+	// Deprecated
+	//return PlayerStats.PlayerMaxPower[GetConnectedState()];
 }
 
 void UBikeGameInstance::UpdateCurrency(int Amount)
@@ -380,6 +391,12 @@ void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
 		CurrentGear--;
 		BluetoothTask->RequestGearChange(CurrentGear);
 	}
+}
+
+void UBikeGameInstance::SetCurrentGear(int NewGear)
+{
+	CurrentGear = NewGear;
+	BluetoothTask->RequestGearChange(CurrentGear);
 }
 
 int UBikeGameInstance::GetCurrentGear() const
