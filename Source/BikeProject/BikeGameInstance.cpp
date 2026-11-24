@@ -469,6 +469,26 @@ EBluetoothConnectionState UBikeGameInstance::GetHRConnectionState() const
 	return BluetoothTask->GetHRConnectionState();
 }
 
+bool UBikeGameInstance::GetBluetoothConnectionsProcessed() const
+{
+	return BluetoothConnectionsProcessed;
+}
+
+void UBikeGameInstance::SetBluetoothConnectionsProcessed(bool Processed)
+{
+	BluetoothConnectionsProcessed = Processed;
+}
+
+EMenuTransition UBikeGameInstance::GetNextMenuTransition() const
+{
+	return NextMenuTransition;
+}
+
+void UBikeGameInstance::SetNextMenuTransition(EMenuTransition MenuToLoad)
+{
+	NextMenuTransition = MenuToLoad;
+}
+
 bool UBikeGameInstance::GetAllDevicesConnected() const
 {
 	return (BluetoothTask->GetFrameConnectionState() == EBluetoothConnectionState::CONNECTED && BluetoothTask->GetTrainerConnectionState() == EBluetoothConnectionState::CONNECTED && BluetoothTask->GetHRConnectionState() == EBluetoothConnectionState::CONNECTED);

@@ -66,6 +66,13 @@ enum class EBluetoothInputEvent : uint8
 	RELEASED UMETA(DisplayName = "Input Releasesd")
 };
 
+UENUM(BlueprintType)
+enum class EMenuTransition : uint8
+{
+	BLUETOOTHCONNECTION UMETA(DisplayName = "Bluetooth connection page"),
+	PEDALTOSTART UMETA(DisplayName = "Pedal to start page"),
+	MAINMENU UMETA(DisplayName = "Main menu")
+};
 
 USTRUCT(BlueprintType)
 struct FBluetoothDeviceStruct

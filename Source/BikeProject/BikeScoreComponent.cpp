@@ -14,41 +14,6 @@ UBikeScoreComponent::UBikeScoreComponent()
 	// ...
 }
 
-EScoringType UBikeScoreComponent::GetScoringType() const
-{
-	return ScoringType;
-}
-
-void UBikeScoreComponent::SetScoringType(EScoringType p_ScoringType)
-{
-	ScoringType = p_ScoringType;
-}
-
-int32 UBikeScoreComponent::GetScore() const
-{
-	return CurrentScore;
-}
-
-void UBikeScoreComponent::SetScore(int32 p_Score)
-{
-	int32 Difference = p_Score - CurrentScore;
-
-	if (Difference == 0)
-	{
-		return;
-	}
-
-	CurrentScore = p_Score;
-
-	ScoreChangedSignal.Broadcast(CurrentScore, Difference);
-}
-
-void UBikeScoreComponent::IncrementScore(int32 p_ScoreIncrement)
-{
-	SetScore(CurrentScore + p_ScoreIncrement);
-}
-
-
 
 // Called when the game starts
 void UBikeScoreComponent::BeginPlay()
