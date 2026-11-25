@@ -38,16 +38,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString CreateUniqueUsername();
 
+	// run this whenever game closes, saves overall data
 	UFUNCTION(BlueprintCallable)
 	void SaveAccounts();
 
 	UFUNCTION(BlueprintCallable)
 	bool LoginUser(const FString& Username);
 
+	// run this whenever a user is updated
 	UFUNCTION(BlueprintCallable)
 	void SaveUser();
 
-	UFUNCTION(BlueprintCallable) // sets the stats used by the current save file, prepping for a save
+	// sets the stats used by the current save file, prepping for a save
+	UFUNCTION(BlueprintCallable) 
 	void SetUserStats();
 
 	// returns an uneditable reference to the accounts
@@ -60,7 +63,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString GetCurrentPlayerName();
 
-	// returns uneditable reference to top 10 accounts (by score)
+	// returns uneditable reference to top 10 accounts (by score), MUST CALL SORT BEFORE THIS, THIS WILL NOT SORT ACCOUNTS
 	UFUNCTION(BlueprintCallable)
 	const TArray<FUserAccount> GetTopTenAccounts() const;
 

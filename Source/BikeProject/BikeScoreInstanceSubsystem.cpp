@@ -33,20 +33,25 @@ void UBikeScoreInstanceSubsystem::SetScore(int32 p_Score)
 	}
 }
 
-void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type, int32 ScoreIncrement)
+void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type)
 {
 	int32 Increment = 0;
 
 	switch (Type)
 	{
 	case EScoringType::NOSCORINGTYPE:
-		Increment = ScoreIncrement;
 		break;
 	case EScoringType::OBSTACLEBAD:
 		Increment = ObstacleBadValue;
 		break;
 	case EScoringType::OBSTACELGOOD:
 		Increment = ObstacelGoodValue;
+		break;
+	case EScoringType::SLOWLANE:
+		Increment = SlowLaneValue;
+		break;
+	case EScoringType::MEDIUMLANE:
+		Increment = MediumLaneValue;
 		break;
 	case EScoringType::FASTLANE:
 		Increment = FastLaneValue;
@@ -61,6 +66,13 @@ void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type, int32 ScoreI
 	SetScore(CurrentScore + Increment);
 	ScoreChangedSignal.Broadcast(CurrentScore, Increment);
 }
+
+void UBikeScoreInstanceSubsystem::IncrementScoreByAmount(int32 Increment)
+{
+	SetScore(CurrentScore + Increment);
+	ScoreChangedSignal.Broadcast(CurrentScore, Increment);
+}
+
 
 void UBikeScoreInstanceSubsystem::IncrementMultiplier(int32 Increment)
 {

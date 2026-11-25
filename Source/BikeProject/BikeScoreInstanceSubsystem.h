@@ -25,6 +25,8 @@ enum class EScoringType : uint8
 	NOSCORINGTYPE UMETA(DisplayName = "No Scoring Type Selected"),
 	OBSTACLEBAD UMETA(DisplayName = "Obstacle Bad"),
 	OBSTACELGOOD UMETA(DisplayName = "Obstacle Good"),
+	SLOWLANE UMETA(DisplayName = "Slow Lane"),
+	MEDIUMLANE UMETA(DisplayName = "Medium Lane"),
 	FASTLANE UMETA(DisplayName = "Fast Lane"),
 	CHECKPOINT UMETA(DisplayName = "Checkpoint")
 };
@@ -51,10 +53,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ResetScore();
 
-
-	// only use the increment if type is none
+	// only use the increment if type is none	
 	UFUNCTION(BlueprintCallable)
-	void IncrementScore(EScoringType Type, int32 Increment);
+	void IncrementScore(EScoringType Type);
+
+	// just for odd situations where a weird amount of score needs added, idrk where this would be needed
+	UFUNCTION(BlueprintCallable)
+	void IncrementScoreByAmount(int32 Increment);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnScoreChanged ScoreChangedSignal;
@@ -88,6 +93,8 @@ private:
 
 	int32 ObstacelGoodValue = 50;
 	int32 ObstacleBadValue = -50;
+	int32 SlowLaneValue = 1;
+	int32 MediumLaneValue = 5;
 	int32 FastLaneValue = 10;
 	int32 CheckpointValue = 500;
 

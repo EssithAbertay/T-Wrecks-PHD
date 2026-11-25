@@ -22,6 +22,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputReleased, EBluetoothI
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothInputHeld, EBluetoothInputs, Input);
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBluetoothPowerChanged, int, Power);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHeartrateChanged, int, Heartrate);
+
+
+
+
+
 UCLASS()
 class BIKEPROJECT_API UBikeGameInstance : public UGameInstance
 {
@@ -52,7 +59,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerStats(FPlayerStats Stats);
 
+	// will compare current high score with the included parameter, and if the paramaeter score is higher will replace
+	UFUNCTION(BlueprintCallable)
+	void SetHighScore(int NewScore);
 
+	UFUNCTION(BlueprintCallable)
+	int GetHighScore() const;
+
+	UFUNCTION(BlueprintCallable)
+	void ResetHighScore();
 
 
 	//UFUNCTION(BlueprintCallable) // replaced with subsystem
@@ -202,6 +217,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FBluetoothInputHeld BluetoothInputHeldSignal;
 
+	UPROPERTY(BlueprintAssignable)
+	FBluetoothPowerChanged BluetoothPowerChangedSignal;
+
+	UPROPERTY(BlueprintAssignable)
+	FHeartrateChanged HeartrateChangedSignal;
+
 	// input management
 
 	UFUNCTION(BlueprintCallable)
@@ -283,7 +304,7 @@ private:
 
 	// Bluetooth task variables and things :p
 
-	BikeBluetoothInput* BluetoothTask;
+	BikeBluetoothInput* BluetoothTask = nullptr;
 
 	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
 	TArray<FBluetoothDeviceStruct> BluetoothDevices;
@@ -306,7 +327,7 @@ private:
 
 	UPROPERTY(BlueprintGetter = GetBluetoothPower, BlueprintSetter = SetBluetoothPower)
 	float BluetoothPower;
-
+	float DefaultMaxPower = 100;
 	// controller
 
 	UPROPERTY(BlueprintGetter = GetControllerState, BlueprintSetter = SetControllerState)

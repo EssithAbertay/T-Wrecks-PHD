@@ -354,9 +354,13 @@ void BikeBluetoothInput::RequestScanStop()
 void BikeBluetoothInput::RequestGearChange(int NewGear)
 {
 	NewResistance = (MaximumResistnace / GameInstanceRef->GetMaxGear()) * NewGear;
-	int IncrementFix = NewResistance % ResistanceIncrement;
-	NewResistance -= IncrementFix;
-
+	
+	if (NewResistance != 0)
+	{
+		int IncrementFix = NewResistance % ResistanceIncrement;
+		NewResistance -= IncrementFix;
+	}
+		
 	RequestedGearChange = true;
 }
 
@@ -434,6 +438,11 @@ void BikeBluetoothInput::HandleFTMSSetup()
 
 void BikeBluetoothInput::ChangeGear()
 {
+	if (!ConnectedTrainer.initialized() || !ConnectedTrainer.is_connected())
+	{
+		return;
+	}
+
 	int16 TargetResistance = NewResistance;
 
 	UE_LOG(LogTemp, Warning, TEXT("Setting Target Resistance: %d"), static_cast<int32>(TargetResistance));

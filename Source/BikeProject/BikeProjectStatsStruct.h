@@ -23,6 +23,16 @@ struct FPlayerStats
     UPROPERTY()
     float PlayerMaxBluetoothPower;
 
+    // the following variables are stored twice, here, and in the overall parent (the same comment is there as well), this is the ultimate source of truth, the higher level is for easy access on leaderboard and login page
+    UPROPERTY()
+    int HighScore;
+    UPROPERTY()
+    int CurrentRank;
+    UPROPERTY()
+    int TotalEnergy;
+    // end of duplicate variables
+
+
     UPROPERTY(BlueprintReadWrite)
     float TotalDistanceRan;
     UPROPERTY(BlueprintReadWrite)

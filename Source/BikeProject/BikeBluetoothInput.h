@@ -18,8 +18,8 @@ class BIKEPROJECT_API UBikeLoginInstanceSubsystem;
 class BIKEPROJECT_API BikeBluetoothInput : public FRunnable
 {
 	FRunnableThread* RunnableThread;
-	UBikeGameInstance* GameInstanceRef;
-	UBikeLoginInstanceSubsystem* LoginSubsystemRef;
+	UBikeGameInstance* GameInstanceRef = nullptr;
+	UBikeLoginInstanceSubsystem* LoginSubsystemRef = nullptr;
 
 	std::unordered_map<std::string, SimpleBLE::Peripheral> PendingPeripherals;
 	std::unordered_map<std::string, SimpleBLE::Peripheral> ClassifiedPeripherals;

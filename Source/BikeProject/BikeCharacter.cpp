@@ -3,6 +3,7 @@
 #include "BikeCharacter.h"
 
 #include "BikeGameInstance.h"
+#include "BikeScoreInstanceSubsystem.h"
 
 // Sets default values
 ABikeCharacter::ABikeCharacter()
@@ -47,8 +48,8 @@ ABikeCharacter::ABikeCharacter()
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
 	// Default variables, percents used to be 0.7, 0.5 
-	UpperPercent = 0.8f;
-	MiddlePercent = 0.4f;
+	UpperPercent = 0.7f;
+	MiddlePercent = 0.5f;
 	LowerPercent = 0.3f;
 
 	BikeLanes = nullptr;
@@ -111,6 +112,31 @@ void ABikeCharacter::Movement(float DeltaTime)
 
 	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
 	GameInstanceRef->IncDistTravelled(ForwardValue * DeltaTime / 1000.f);
+
+
+	// during movememnt we award score based on the users current lane
+	if (ScoreCooldown >= ScoreCooldownMax)
+	{
+		ScoreCooldown = 0;
+
+		switch (PowerLane)
+		{
+		case 0:
+			GameInstanceRef->GetSubsystem<UBikeScoreInstanceSubsystem>()->IncrementScore(EScoringType::SLOWLANE);
+			break;
+		case 1:
+			GameInstanceRef->GetSubsystem<UBikeScoreInstanceSubsystem>()->IncrementScore(EScoringType::MEDIUMLANE);
+			break;
+		case 2:
+			GameInstanceRef->GetSubsystem<UBikeScoreInstanceSubsystem>()->IncrementScore(EScoringType::FASTLANE);
+			break;
+		}
+	}
+	else
+	{
+		ScoreCooldown += DeltaTime;
+	}
+
 }
 
 FVector ABikeCharacter::GetPrevMov()
@@ -182,7 +208,7 @@ void ABikeCharacter::MoveNewLane_Implementation(float DeltaTime)
 	//checking if should be moving to a lane
 	else
 	{
-		// Checks if CURRENTPOWER is past the upper of the power scale
+		// Checks if CURRENTPOWER is past the upper of the power scale, if it is will send you to lane 2
 		if (CURRENTPOWER > UPPERPOWER)
 		{
 			// move one lane at a time
@@ -296,6 +322,9 @@ void ABikeCharacter::LoadMaxPower()
 	UPPERPOWER = MAXPOWER * UpperPercent;
 	MIDDLEPOWER = MAXPOWER * MiddlePercent;
 	LOWERPOWER = MAXPOWER * LowerPercent;
+
+
+	UE_LOG(LogTemp, Log, TEXT("Max Power: %f Upper Power: %f Middle Power: %f Lower Power: %f"), MAXPOWER, UPPERPOWER, MIDDLEPOWER, LOWERPOWER);
 }
 
 void ABikeCharacter::SetMaxPower(float NewPower)

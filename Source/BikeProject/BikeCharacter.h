@@ -110,6 +110,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+
+
+	// scoring
+
+	UPROPERTY()
+	float ScoreCooldown = 0;
+	UPROPERTY()
+	float ScoreCooldownMax = 0.2;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -71,7 +71,6 @@ void UBikeGameInstance::SetPhysicalSpeed(float NewSpeed)
 	default:
 		break;
 	}
-	
 }
 
 void UBikeGameInstance::SetMobileSpeed(float NewSpeed)
@@ -110,6 +109,20 @@ void UBikeGameInstance::SetPlayerStats(FPlayerStats Stats)
 	PlayerStats = Stats;
 }
 
+void UBikeGameInstance::SetHighScore(int NewScore)
+{
+	PlayerStats.HighScore = FMath::Max(PlayerStats.HighScore, NewScore); // set the highscore as the higher score between the two.
+}
+
+int UBikeGameInstance::GetHighScore() const
+{
+	return PlayerStats.HighScore;
+}
+
+void UBikeGameInstance::ResetHighScore()
+{
+	PlayerStats.HighScore = 0;
+}
 
 // this gets replaced with saving in the subsystem
 //void UBikeGameInstance::SavePlayerStats()
@@ -138,9 +151,7 @@ void UBikeGameInstance::SetMaxPower(float NewMaxPower)
 
 float UBikeGameInstance::GetMaxPower() const
 {
-	return PlayerStats.PlayerMaxBluetoothPower;
-
-
+	return PlayerStats.PlayerMaxBluetoothPower <= 0 ? DefaultMaxPower : PlayerStats.PlayerMaxBluetoothPower;
 	// Deprecated
 	//return PlayerStats.PlayerMaxPower[GetConnectedState()];
 }
@@ -343,6 +354,7 @@ float UBikeGameInstance::GetBluetoothPower() const
 void UBikeGameInstance::SetBluetoothPower(float BTPower)
 {
 	BluetoothPower = BTPower;
+	BluetoothPowerChangedSignal.Broadcast(BTPower);
 }
 
 void UBikeGameInstance::MakeConnectionRequest(EBluetoothConnectionDevice DeviceToConnect, const FString& RequestedConnectionAddress)
@@ -378,8 +390,7 @@ void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
 			return;
 		}
 		PreviousGear = CurrentGear;
-		CurrentGear++;
-		BluetoothTask->RequestGearChange(CurrentGear);
+		CurrentGear++;	
 	}
 	else
 	{
@@ -389,13 +400,25 @@ void UBikeGameInstance::MakeGearChangeRequest(bool bGearUp)
 		}
 		PreviousGear = CurrentGear;
 		CurrentGear--;
-		BluetoothTask->RequestGearChange(CurrentGear);
 	}
+
+	if (BluetoothTask == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("BluetoothInput is nullptr"));
+		return;
+	}
+	
+	BluetoothTask->RequestGearChange(CurrentGear);
 }
 
 void UBikeGameInstance::SetCurrentGear(int NewGear)
 {
 	CurrentGear = NewGear;
+	if (BluetoothTask == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("BluetoothInput is nullptr"));
+		return;
+	}
 	BluetoothTask->RequestGearChange(CurrentGear);
 }
 
@@ -422,13 +445,14 @@ int UBikeGameInstance::GetHeartRate() const
 void UBikeGameInstance::SetHeartRate(int NewHeartRate)
 {
 	HeartRate = NewHeartRate;
+	HeartrateChangedSignal.Broadcast(NewHeartRate);
 }
 
 void UBikeGameInstance::BroadcastNewDevice(FString BluetoothDeviceId, EBluetoothConnectionDevice BluetoothConnectionDevice, FString BluetoothDeviceAddress)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, BluetoothDeviceId, BluetoothConnectionDevice, BluetoothDeviceAddress]()
 	{
-			BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothConnectionDevice, BluetoothDeviceAddress);
+		BluetoothDeviceSignal.Broadcast(BluetoothDeviceId, BluetoothConnectionDevice, BluetoothDeviceAddress);
 	});
 }
 

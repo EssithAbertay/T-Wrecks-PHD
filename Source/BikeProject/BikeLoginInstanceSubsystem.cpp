@@ -120,6 +120,7 @@ bool UBikeLoginInstanceSubsystem::LoginUser(const FString& Username)
     }
     else
     {
+        UE_LOG(LogTemp, Warning, TEXT("Account Found, loading stats"));
         UBikeGameInstance* GameInstance = Cast<UBikeGameInstance>(GetGameInstance());
         GameInstance->SetPlayerStats(CurrentPlayerSave->SaveStats);
     }
@@ -147,7 +148,11 @@ void UBikeLoginInstanceSubsystem::SetUserStats()
 
     if (GameInstance)
     {
+        // set stats to the dedicated save file
         CurrentPlayerSave->SaveStats = GameInstance->GetPlayerStats();
+
+        // set stats to the higher level account db
+        CurrentPlayerAccount.HighScore = GameInstance->GetHighScore();
     }
 }
 
@@ -179,34 +184,12 @@ const TArray<FUserAccount> UBikeLoginInstanceSubsystem::GetTopTenAccounts() cons
     TArray<FUserAccount> TopTenArray;
     TopTenArray.SetNum(10);
 
-    for (auto& account : AccountDatabase->UserAccounts)
+    // Find where this account belongs
+    for (int i = 0; i < FMath::Min(AccountDatabase->UserAccounts.Num(),10); i++)
     {
-        if (account.HighScore < TopTenArray[9].HighScore) // if this account has a high score less than number 10 on the list, then skip it
-        {
-            continue;
-        }
-
-        // Find where this account belongs
-        for (int i = 9; i >= 0; --i)
-        {
-            if (account.HighScore > TopTenArray[i].HighScore)
-            {
-                // Shift entries down
-                if (i < 9)
-                {
-                    TopTenArray.Insert(account, i);
-                    TopTenArray.RemoveAt(10);
-                }
-                else
-                {
-                    TopTenArray[i] = account;
-                }
-
-                break;
-            }
-        }
+        TopTenArray[i] = AccountDatabase->UserAccounts[i];
     }
-
+    
     return TopTenArray;
 }
 

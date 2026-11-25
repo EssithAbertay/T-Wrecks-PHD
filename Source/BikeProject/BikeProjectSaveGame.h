@@ -44,7 +44,11 @@ public:
     UPROPERTY(VisibleAnywhere, Category = Basic)
     FString SaveSlotName;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
+    FColor UserColor = FColor::White;
     // any data we need easy access to (for leaderboards etc, store here as well)
+    // these variables are stored twice, here, and in the actual save file 
+    //(the same comment is there as well), this is not the source of truth, these are only to be used for the login page and other places where we dont load the save files of other users, whenever you nee the actual values please use the version from BikeProjectStatsStruct
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
     int HighScore = 0;
@@ -54,9 +58,6 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
     int TotalEnergy = 0;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basic)
-    FColor UserColor = FColor::White;
 };
 
 
