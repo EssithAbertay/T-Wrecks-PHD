@@ -90,7 +90,7 @@ void ABikeProjectPlayerController::Tick(float DeltaTime)
 
 				// when a brake is held, we want to go down "1" lane, so need to work out the maths on that. So like if current power is 200 and then lane down starts at 100 - 150, we want to go to 125 (or somehwere in the middle idk)
 
-				int CurrLane = 0;
+				int CurrLane = PawnInstanceRef->GetPowerLane();
 
 				// we need to get the lane that the player "should be in" as otherwise the player will jump around like mad
 

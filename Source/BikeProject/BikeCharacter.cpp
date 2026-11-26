@@ -66,6 +66,8 @@ ABikeCharacter::ABikeCharacter()
 	PPMed = 0.3f;
 	PPAlpha = 0.f;
 	PPAlphaMult = 2.f;
+
+	
 }
 
 // Called when the game starts or when spawned
@@ -83,6 +85,11 @@ void ABikeCharacter::BeginPlay()
 	BikeLanes = GetWorld()->SpawnActor<ABikeLaneActor>(LanesLocation, LanesRotation, SpawnInfo);
 
 	BikeLanes->InitValues(LaneWidth, LaneSpeed);
+
+
+	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
+	GameInstanceRef->GetSubsystem<UBikeScoreInstanceSubsystem>()->ResetLaneTime();
+
 
 	check(GEngine != nullptr);
 
@@ -112,6 +119,10 @@ void ABikeCharacter::Movement(float DeltaTime)
 
 	UBikeGameInstance* GameInstanceRef = Cast<UBikeGameInstance>(GetGameInstance());
 	GameInstanceRef->IncDistTravelled(ForwardValue * DeltaTime / 1000.f);
+
+
+
+	GameInstanceRef->GetSubsystem<UBikeScoreInstanceSubsystem>()->IncreaseLaneTime(PowerLane, DeltaTime);
 
 
 	// during movememnt we award score based on the users current lane

@@ -44,6 +44,9 @@ void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type)
 	case EScoringType::OBSTACLEBAD:
 		Increment = ObstacleBadValue;
 		break;
+	case EScoringType::OBSTACLEBADDODGE:
+		Increment = ObstacleBadDodgeValue;
+		break;
 	case EScoringType::OBSTACELGOOD:
 		Increment = ObstacelGoodValue;
 		break;
@@ -57,20 +60,62 @@ void UBikeScoreInstanceSubsystem::IncrementScore(EScoringType Type)
 		Increment = FastLaneValue;
 		break;
 	case EScoringType::CHECKPOINT:
-		Increment = CheckpointValue;
+		Increment = CalculateCheckpointScore();
+		ResetLaneTime();
 		break;
 	default:
 		break;
 	}
 
 	SetScore(CurrentScore + Increment);
-	ScoreChangedSignal.Broadcast(CurrentScore, Increment);
+	ScoreChangedSignal.Broadcast(CurrentScore, Increment, Type);
 }
 
 void UBikeScoreInstanceSubsystem::IncrementScoreByAmount(int32 Increment)
 {
 	SetScore(CurrentScore + Increment);
-	ScoreChangedSignal.Broadcast(CurrentScore, Increment);
+	ScoreChangedSignal.Broadcast(CurrentScore, Increment, EScoringType::NOSCORINGTYPE);
+}
+
+int UBikeScoreInstanceSubsystem::CalculateCheckpointScore()
+{
+	int CheckpointScoreToAward = 0;
+
+	float TotalLaneTime = 0;
+		
+	for (int32 i = 0; i < LaneTimes.Num(); ++i)
+	{
+		TotalLaneTime += LaneTimes[i];
+	}
+
+	// take proportion of time spent in each lane, multiply by its base value, then total those
+	double TimeProportionInLane = 0;
+	for (int32 i = 0; i < LaneTimes.Num(); ++i)
+	{
+		TimeProportionInLane = (LaneTimes[i] / TotalLaneTime) * 100;
+		CheckpointScoreToAward += TimeProportionInLane * LaneTimeValues[i];
+		UE_LOG(LogTemp, Log, TEXT("Time Proportion: %f"), TimeProportionInLane);
+	}
+
+	return CheckpointScoreToAward;
+}
+
+void UBikeScoreInstanceSubsystem::IncreaseLaneTime(int Lane, float Time)
+{
+	LaneTimes[Lane] += Time;
+}
+
+void UBikeScoreInstanceSubsystem::ResetLaneTime()
+{
+	for (int32 i = 0; i < LaneTimes.Num(); ++i)
+	{
+		LaneTimes[i] = 0;
+	}
+}
+
+float UBikeScoreInstanceSubsystem::GetLaneTime(int Lane) const
+{
+	return LaneTimes[Lane];
 }
 
 
