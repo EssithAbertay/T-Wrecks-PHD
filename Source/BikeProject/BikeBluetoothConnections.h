@@ -75,10 +75,12 @@ enum class EMenuTransition : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FBluetoothDeviceStruct
+struct FBluetoothDeviceDetailsStruct
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EBluetoothConnectionState ConnectionState = EBluetoothConnectionState::UNCONNECTED;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString ID;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

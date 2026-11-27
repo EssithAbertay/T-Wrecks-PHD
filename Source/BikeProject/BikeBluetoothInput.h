@@ -12,6 +12,11 @@
 
 class BIKEPROJECT_API UBikeGameInstance;
 class BIKEPROJECT_API UBikeLoginInstanceSubsystem;
+
+
+
+
+
 /**
  * 
  */
@@ -54,17 +59,19 @@ public:
 
 	bool ConnectToPeripheral(SimpleBLE::Peripheral * PeripheralToConnect, const FString& PeripheralAddress);
 
-	EBluetoothConnectionState GetFrameConnectionState();
-	EBluetoothConnectionState GetTrainerConnectionState();
-	EBluetoothConnectionState GetHRConnectionState();
-	
-	FString GetConnectedFrameName();
-	FString GetConnectedTrainerName();
-	FString GetConnectedHRMonitorName();
+	// these could probably be unified into one function for each device that returns the details struct, idk
 
-	FString GetConnectedFrameAddress();
-	FString GetConnectedTrainerAddress();
-	FString GetConnectedHRMonitorAddress();
+	EBluetoothConnectionState GetFrameConnectionState() const;
+	EBluetoothConnectionState GetTrainerConnectionState() const;
+	EBluetoothConnectionState GetHRConnectionState() const;
+	
+	FString GetConnectedFrameName() const;
+	FString GetConnectedTrainerName() const;
+	FString GetConnectedHRMonitorName() const;
+
+	FString GetConnectedFrameAddress() const;
+	FString GetConnectedTrainerAddress() const;
+	FString GetConnectedHRMonitorAddress() const;
 private:
 	FThreadSafeBool FirstRun = true;
 	FThreadSafeBool bRunThread = true;
@@ -78,14 +85,8 @@ private:
 	//FThreadSafeBool ConnectionRequested = false;
 	//FThreadSafeBool Connecting = false;
 
-	EBluetoothConnectionState FrameConnectionState = EBluetoothConnectionState::UNCONNECTED;
-	EBluetoothConnectionState TrainerConnectionState = EBluetoothConnectionState::UNCONNECTED;
-	EBluetoothConnectionState HRConnectionState = EBluetoothConnectionState::UNCONNECTED;
-
-
 	FThreadSafeBool RequestedScanStart = false;
 	FThreadSafeBool RequestedScanStop = false;
-
 
 	FThreadSafeBool FTMSPresent = false;
 
@@ -130,15 +131,23 @@ private:
 	const std::string HeartRateServiceUUID = "0000180d-0000-1000-8000-00805f9b34fb";
 	const std::string HeartRateCharacteristicUUID = "00002a37-0000-1000-8000-00805f9b34fb";
 
+	FBluetoothDeviceDetailsStruct TrainerDetails;
+	FBluetoothDeviceDetailsStruct FrameDetails;
+	FBluetoothDeviceDetailsStruct HRDetails;
 
 	// internal functions
 	bool ClassifyPeripheral(SimpleBLE::Peripheral& Peripheral, EBluetoothConnectionDevice& OutDeviceType);
 
 	bool CheckReconnect(FString DeviceAddress, EBluetoothConnectionDevice& OutDeviceType);
 
+	void HandleExistingConnection(SimpleBLE::Peripheral* Peripheral, EBluetoothConnectionDevice DeviceType);
+
 	void HandleFTMSSetup();
 
 	void ChangeGear();
+
+	// used to check if any device is in the process of connecting, does what it says on the tin
+	bool CheckAnyDeviceConnecting();
 
 // requirements for runnable
 public:
