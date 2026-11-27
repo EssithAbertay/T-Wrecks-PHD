@@ -16,6 +16,7 @@ enum class EBluetoothConnectionState : uint8
 {
 	UNCONNECTED UMETA(DisplayName = "Unconnected"),
 	DISCONNECTED UMETA(DisplayName = "Disconnected"),
+	QUEUED UMETA(DisplayName = "Queued"),
 	CONNECTED UMETA(DisplayName = "Connected"),
 	CONNECTING UMETA(DisplayName = "Connecting")
 };
