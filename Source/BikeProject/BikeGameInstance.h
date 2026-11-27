@@ -146,10 +146,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopBluetoothTask();
 
-	void AddToDeviceArray(FString NewID, FString NewAddress);
-
-	UFUNCTION(BlueprintCallable)
-	TArray<FBluetoothDeviceStruct> GetBluetoothDeviceArray() const;
 
 	UFUNCTION(BlueprintCallable)
 	void SetDesiredConnection(int connectionValue);
@@ -306,8 +302,6 @@ private:
 
 	BikeBluetoothInput* BluetoothTask = nullptr;
 
-	UPROPERTY(BlueprintGetter = GetBluetoothDeviceArray)
-	TArray<FBluetoothDeviceStruct> BluetoothDevices;
 
 	UPROPERTY(BlueprintSetter = SetDesiredConnection)
 	int desiredConnection = -1;

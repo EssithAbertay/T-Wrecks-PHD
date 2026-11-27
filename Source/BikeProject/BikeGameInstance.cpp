@@ -325,15 +325,6 @@ void UBikeGameInstance::StopBluetoothTask()
 	BluetoothTask = nullptr;
 }
 
-void UBikeGameInstance::AddToDeviceArray(FString NewID, FString NewAddress)
-{
-	BluetoothDevices.Add({NewID, NewAddress});
-}
-
-TArray<FBluetoothDeviceStruct> UBikeGameInstance::GetBluetoothDeviceArray() const
-{
-	return BluetoothDevices;
-}
 
 
 void UBikeGameInstance::SetDesiredConnection(int connectionValue)
